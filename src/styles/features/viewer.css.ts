@@ -29,3 +29,18 @@ export const accuracyValue = style({
 export const table = style({ width: '100%', borderCollapse: 'collapse', fontSize: fontSize.control, fontVariantNumeric: 'tabular-nums' })
 export const th = style({ textAlign: 'left', fontWeight: weight.regular, padding: `${space[1]} 0` })
 export const td = style({ textAlign: 'right', padding: `${space[1]} 0`, width: '4em' })
+
+export const comment = style({ display: 'grid', gap: space[1], justifyItems: 'start' })
+export const commentText = style({ fontSize: fontSize.body, lineHeight: 1.6, color: vars.color.ink, wordBreak: 'keep-all', overflowWrap: 'anywhere' })
+export const commentClamped = style({ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' })
+export const variation = style({ color: vars.color.muted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' })
+export const moreButton = style({
+  minHeight: 44,
+  padding: `0 ${space[1]}`,
+  border: 0,
+  background: 'transparent',
+  color: vars.color.accent,
+  fontSize: fontSize.control,
+  fontWeight: weight.medium,
+  cursor: 'pointer',
+})

@@ -24,6 +24,7 @@ import { Disclosure } from '../../ui/Disclosure'
 import { NotFound } from '../NotFound'
 import { ForkDialog } from '../play/ForkDialog'
 import { JudgmentCard } from './JudgmentCard'
+import { useAnnotations } from './useAnnotations'
 import { ReviewSummary } from './ReviewSummary'
 import { useGame } from './useGame'
 import { useLiveAnalysis } from './useLiveAnalysis'
@@ -83,6 +84,8 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     setPly(value)
   }, [])
   const fen = plies[ply].fen
+  const annotations = useAnnotations(gameRef)
+  const authored = annotations?.plies.find((a) => a.ply === ply) ?? null
   useEffect(() => setHint(false), [ply])
 
   const startFork = async ({ playerColor, engineElo }: { playerColor: Color; engineElo: number }) => {
@@ -159,7 +162,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
       </div>
 
       <div className={g.panel}>
-        <JudgmentCard plies={plies} ply={ply} review={review} onStartReview={runReview} hint={hint} hintUci={hintUci} />
+        <JudgmentCard plies={plies} ply={ply} review={review} onStartReview={runReview} hint={hint} hintUci={hintUci} comment={authored ? { text: authored.text, key: authored.key } : null} />
         {review.status === 'done' && (
           <ReviewSummary review={review.review} startTurn={turnOf(plies[0].fen)} onRerun={runReview} />
         )}

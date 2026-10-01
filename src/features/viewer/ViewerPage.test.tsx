@@ -9,6 +9,21 @@ import { boardProps } from '../../test/boardMock'
 import { renderRoute } from '../../test/renderRoute'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
+vi.mock('../../sources/annotations', () => ({
+  annotationSlugs: () => ['opera-game'],
+  loadAnnotations: async (slug: string) =>
+    slug === 'opera-game'
+      ? {
+          slug,
+          version: 1,
+          scenes: [],
+          plies: [
+            { ply: 0, text: '파리 오페라 극장 귀빈석에서 둔 한 판이에요.' },
+            { ply: 1, text: '중앙을 차지하며 시작해요.', key: true },
+          ],
+        }
+      : null,
+}))
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
@@ -23,6 +38,15 @@ function analysisEngine() {
 }
 
 describe('ViewerPage', () => {
+  it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {
+    renderRoute('/game/classic/opera-game')
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    expect(await within(card).findByText('파리 오페라 극장 귀빈석에서 둔 한 판이에요.')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(await within(card).findByText('중앙을 차지하며 시작해요.')).toBeInTheDocument()
+    expect(within(card).getByText('핵심 장면')).toBeInTheDocument()
+  })
+
   it('명경기를 불러와 키보드로 수를 넘기고 엔진 평가를 보여준다', async () => {
     renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     expect(await screen.findByRole('heading', { name: /Paul Morphy/ })).toBeInTheDocument()
