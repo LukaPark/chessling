@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Chessling</title>
+    <script>
+      // 첫 페인트 전에 테마·보드·기물을 적용한다. 허용 목록은 src/styles/boardThemes.ts와 같아야 한다.
+      ;(function () {
+        var root = document.documentElement
+        function read(key, allowed, fallback) {
+          var v = null
+          try {
+            v = localStorage.getItem(key)
+          } catch (e) {}
+          return allowed.indexOf(v) >= 0 ? v : fallback
+        }
+        var t = read('chessling-theme', ['light', 'dark'], null)
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        root.dataset.theme = t
+        root.style.colorScheme = t
+        root.dataset.board = read('chessling-board', ['cool', 'brown', 'green', 'blue', 'gray', 'purple'], 'cool')
+        root.dataset.pieces = read('chessling-pieces', ['cburnett', 'merida', 'chessnut', 'fantasy'], 'cburnett')
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

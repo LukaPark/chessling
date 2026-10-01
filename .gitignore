@@ -1,0 +1,12 @@
+node_modules
+dist
+public/engine
+test-results
+playwright-report
+.vercel
+
+.env*.local
+public/chessling-source.tar.gz
+
+.claude/
+.superpowers/
