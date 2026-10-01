@@ -195,7 +195,7 @@ describe('ViewerPage', () => {
     expect(within(card).getByText('시작 포지션')).toBeInTheDocument()
     fireEvent.click(within(card).getByRole('button', { name: '리뷰 실행' }))
     expect(await screen.findByText(/백 정확도/)).toBeInTheDocument()
-    expect(within(card).getByText('17. Rd8#')).toBeInTheDocument()
+    expect(await within(card).findByText('17. Rd8#')).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'Home' })
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(within(card).getByText('1. e4')).toBeInTheDocument()
