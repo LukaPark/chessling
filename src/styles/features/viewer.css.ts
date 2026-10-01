@@ -33,9 +33,10 @@ export const td = style({ textAlign: 'right', padding: `${space[1]} 0`, width: '
 export const comment = style({ display: 'grid', gap: space[1], justifyItems: 'start' })
 export const commentText = style({ fontSize: fontSize.body, lineHeight: 1.6, color: vars.color.ink, wordBreak: 'keep-all', overflowWrap: 'anywhere' })
 export const commentClamped = style({ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' })
-export const variation = style({ color: vars.color.muted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' })
+export const variation = style({ color: vars.color.muted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'normal', wordBreak: 'keep-all' })
 export const moreButton = style({
   minHeight: 44,
+  minWidth: 44,
   padding: `0 ${space[1]}`,
   border: 0,
   background: 'transparent',
