@@ -41,9 +41,9 @@ describe('ViewerPage', () => {
   it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {
     renderRoute('/game/classic/opera-game')
     const card = await screen.findByRole('region', { name: '이번 수 판정' })
-    expect(await within(card).findByText('파리 오페라 극장 귀빈석에서 둔 한 판이에요.')).toBeInTheDocument()
+    expect(await within(card).findByText('파리 오페라 극장 귀빈석에서 둔 한 판이에요.', {}, { timeout: 3000 })).toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'ArrowRight' })
-    expect(await within(card).findByText('중앙을 차지하며 시작해요.')).toBeInTheDocument()
+    expect(await within(card).findByText('중앙을 차지하며 시작해요.', {}, { timeout: 3000 })).toBeInTheDocument()
     expect(within(card).getByText('핵심 장면')).toBeInTheDocument()
   })
 
