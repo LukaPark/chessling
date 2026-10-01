@@ -7,7 +7,8 @@ const SAN = /(\d+\.(?:\.\.)?\s*)?\b(O-O(?:-O)?|[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](
 /** 수 번호 없이 쓴 "e4"는 칸 이름으로 읽는다 ("d5가 비어요") */
 const BARE_SQUARE = /^[a-h][1-8]$/
 const MOVE_NUMBER = /\d+\.(\.\.)?/g
-export const BANNED = [/것입니다/, /중요한 순간/, /놀라운/, /라고 할 수 있/, /매우 흥미로운/]
+/** 문체 금칙어. "엔진"은 해설자 말투를 지키려고 넣었다("엔진은 ~로 봐요" 대신 "~가 나았어요") */
+export const BANNED = [/것입니다/, /중요한 순간/, /놀라운/, /라고 할 수 있/, /매우 흥미로운/, /엔진/]
 
 const plain = (san: string) => san.replace(/[+#]$/, '')
 

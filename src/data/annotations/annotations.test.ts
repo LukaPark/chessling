@@ -72,3 +72,17 @@ describe('validateAnnotations', () => {
     expect(validateAnnotations(a, plies).some((e) => e.includes('둘 쪽이 맞지 않음'))).toBe(true)
   })
 })
+
+it('해설에서 엔진을 직접 말하지 않는다', () => {
+  const plies = pgnToPlies('1. e4 *')
+  const a: Annotations = {
+    slug: 't',
+    version: 1,
+    scenes: [],
+    plies: [
+      { ply: 0, text: '소개예요.', key: true },
+      { ply: 1, text: '엔진은 1.d4를 더 높게 봐요.', key: true },
+    ],
+  }
+  expect(validateAnnotations(a, plies).some((e) => e.includes('1수: 금칙어'))).toBe(true)
+})
