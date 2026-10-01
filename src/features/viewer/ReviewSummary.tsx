@@ -10,7 +10,18 @@ import { Disclosure } from '../../ui/Disclosure'
 const SUMMARY_LABELS: MoveLabel[] = ['brilliant', 'great', 'best', 'miss', 'inaccuracy', 'mistake', 'blunder']
 const fmt = (x: number | null) => (x === null ? '-' : `${x.toFixed(1)}%`)
 
-export function ReviewSummary({ review, startTurn, onRerun }: { review: GameReview; startTurn: Turn; onRerun: () => void }) {
+export function ReviewSummary({
+  review,
+  startTurn,
+  onRerun,
+  quiz,
+}: {
+  review: GameReview
+  startTurn: Turn
+  onRerun: () => void
+  /** 푼 장면 수 / 전체 장면 수. 장면이 없으면 넘기지 않는다 */
+  quiz?: { solved: number; total: number }
+}) {
   const counts = countJudgments(review.labels, startTurn)
   return (
     <div className={v.summary}>
@@ -27,6 +38,14 @@ export function ReviewSummary({ review, startTurn, onRerun }: { review: GameRevi
             {fmt(review.accuracy.black)}
           </span>
         </p>
+        {quiz && quiz.total > 0 && (
+          <p className={v.accuracyItem}>
+            <span className={v.accuracyLabel}>퀴즈</span>
+            <span className={v.accuracyValue} data-quiz-progress="">
+              {quiz.solved}/{quiz.total}
+            </span>
+          </p>
+        )}
         <Button tone="ghost" size="sm" icon={RotateCcw} onClick={onRerun}>
           리뷰 다시 실행
         </Button>

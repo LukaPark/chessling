@@ -79,6 +79,7 @@ export function selectScenes(plies: Ply[], review: GameReview, side: 'w' | 'b' |
         prompt: promptFor(mover, good, steps.length),
         steps,
         source: 'auto',
+        focusPly: c,
       },
     })
   }

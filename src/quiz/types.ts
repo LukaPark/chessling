@@ -17,4 +17,6 @@ export interface QuizScene {
   prompt: string
   steps: QuizStep[]
   source: 'authored' | 'auto'
+  /** [이어서 보기]로 갈 기보 수. 없으면 마지막 단계의 수 */
+  focusPly?: number
 }

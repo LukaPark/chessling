@@ -50,7 +50,7 @@ export const stage = style({
   gap: space[3],
   '@media': { [mq.md]: { gridColumn: 1, gridTemplateColumns: 'auto minmax(0, 1fr)', alignItems: 'stretch' } },
 })
-export const boardWrap = style({ width: '100%', touchAction: 'pan-y' })
+export const boardWrap = style({ position: 'relative', width: '100%', touchAction: 'pan-y' })
 export const panel = style({
   display: 'grid',
   gap: space[4],

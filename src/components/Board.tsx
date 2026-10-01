@@ -23,10 +23,14 @@ export function Board({ fen, orientation, lastMoveUci, check, shapes, movable }:
   const api = useRef<Api | null>(null)
   const onMoveRef = useRef(movable?.onMove)
   onMoveRef.current = movable?.onMove
+  // 처음 그릴 때부터 이 포지션으로 시작한다. 없으면 기본 배치에서 이 포지션으로 기물이 날아간다(퀴즈 진입·종료 등 새로 마운트할 때).
+  const initial = useRef({ fen, orientation })
 
   useEffect(() => {
     if (!host.current) return
     api.current = Chessground(host.current, {
+      fen: initial.current.fen,
+      orientation: initial.current.orientation,
       animation: { duration: 150 },
       movable: { free: false, showDests: true, events: { after: (orig, dest) => onMoveRef.current?.(orig, dest) } },
     })

@@ -78,6 +78,8 @@ describe('selectScenes', () => {
       expect(s.steps).toHaveLength(3)
       expect(s.steps.at(-1)?.replyUci).toBeUndefined()
       expect(s.steps[0].replyUci).toBe('a1a2')
+      // 엔진 수순으로 늘려도 [이어서 보기]는 실제 승부처 수로 간다
+      expect(s.focusPly).toBe(8)
     })
     it('pv 4수(짝수)여도 마지막 단계에 응수를 남기지 않는다', () => {
       const s = withPv(4)

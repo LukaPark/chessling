@@ -40,3 +40,9 @@ it('onSelect가 없으면 누를 수 없는 목록으로 그린다', () => {
   expect(screen.getByText('Nf3')).toHaveAttribute('data-label', 'blunder')
   expect(screen.getByText('??')).toBeInTheDocument()
 })
+
+it('퀴즈가 있는 수는 data-quiz와 읽을 이름으로 알린다', () => {
+  render(<MoveList plies={plies} current={0} onSelect={() => {}} quizPlies={new Set([3])} />)
+  expect(screen.getByRole('button', { name: 'Nf3 (퀴즈 있음)' })).toHaveAttribute('data-quiz', '')
+  expect(screen.getByRole('button', { name: 'e5' })).not.toHaveAttribute('data-quiz')
+})
