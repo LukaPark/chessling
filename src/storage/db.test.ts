@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto'
+import Dexie from 'dexie'
 import { describe, expect, it, vi } from 'vitest'
 import { createFork } from '../chess/fork'
 import { createMemoryStore, openDexieStore, openStore, type Store } from './db'
@@ -51,6 +52,33 @@ describe.each<[string, () => Promise<Store>]>([
     await store.reviews.put({ key: 'classic/opera-game', depth: 14, review, createdAt: 1 })
     expect((await store.reviews.get('classic/opera-game'))?.review).toEqual(review)
     expect(await store.reviews.get('nope')).toBeUndefined()
+  })
+
+  it('퀴즈 결과를 경기별로 저장하고 불러온다', async () => {
+    const store = await make()
+    const r = { key: 'classic/opera-game|s1', gameKey: 'classic/opera-game', sceneId: 's1', solvedSteps: 2, totalSteps: 3, attempts: 4, completedAt: 1 }
+    await store.quiz.put(r)
+    await store.quiz.put({ ...r, key: 'lichess/x|s1', gameKey: 'lichess/x' })
+    expect(await store.quiz.list('classic/opera-game')).toEqual([r])
+    await store.quiz.put({ ...r, attempts: 5 })
+    expect((await store.quiz.list('classic/opera-game')).map((x) => x.attempts)).toEqual([5])
+  })
+})
+
+describe('Dexie 버전 올리기', () => {
+  it('v1 DB를 열면 기존 분기·리뷰를 지키고 퀴즈 테이블을 더한다', async () => {
+    const name = `test-${crypto.randomUUID()}`
+    const v1 = new Dexie(name)
+    v1.version(1).stores({ forks: 'id, updatedAt', reviews: 'key' })
+    await v1.table('forks').put(fork('old', 1))
+    await v1.table('reviews').put({ key: 'classic/opera-game', depth: 14, review: {}, createdAt: 1 })
+    v1.close()
+
+    const store = await openDexieStore(name)
+    expect((await store.forks.get('old'))?.id).toBe('old')
+    expect(await store.reviews.get('classic/opera-game')).toBeDefined()
+    await store.quiz.put({ key: 'g|s', gameKey: 'g', sceneId: 's', solvedSteps: 1, totalSteps: 1, attempts: 1, completedAt: 1 })
+    expect(await store.quiz.list('g')).toHaveLength(1)
   })
 })
 
