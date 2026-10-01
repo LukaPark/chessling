@@ -15,8 +15,12 @@ Chess.com·Lichess 대국, 최근 톱 대회, 역사적 명경기를 브라우�
 
 ## 배포
 
-Vercel(Vite 프리셋). `vercel.json`이 SPA fallback과 COOP/COEP 헤더를 설정합니다.
-환경 변수 `VITE_SOURCE_URL`에 이 저장소 주소를 넣으면 /licenses 페이지에 표시됩니다.
+GPT Sites로 배포합니다. `npm run build` 결과물(`dist/`)을 올리고, 호스팅 설정은 `public/`의 두 파일이 맡습니다.
+
+- `public/_redirects`: 없는 경로를 모두 `index.html`로 돌려줍니다(SPA fallback). 그래서 `/game/...`, `/settings` 같은 주소로 바로 들어가거나 새로고침해도 열립니다.
+- `public/_headers`: `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`를 붙입니다. 이 헤더가 있으면 Stockfish가 멀티스레드로, 없으면 싱글스레드로 돌아갑니다.
+
+GPL 소스 링크는 기본으로 이 저장소(https://github.com/LukaPark/chessling)를 가리킵니다. 다른 주소를 쓰려면 빌드할 때 `VITE_SOURCE_URL`을 지정하세요(예: `.env.production.local`).
 
 ## 라이선스
 

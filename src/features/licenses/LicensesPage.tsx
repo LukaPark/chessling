@@ -1,6 +1,6 @@
 import * as p from '../../styles/features/page.css'
+import { sourceUrl } from '../../app/sourceUrl'
 
-const SOURCE_URL = import.meta.env.VITE_SOURCE_URL
 
 type Credit = { name: string; author?: string; license: string; url: string; copying?: boolean; licenseFile?: string }
 
@@ -64,13 +64,7 @@ export function LicensesPage() {
         소프트웨어입니다.
       </p>
       <p>
-        {SOURCE_URL ? (
-          <>
-            소스 코드: <a href={SOURCE_URL}>{SOURCE_URL}</a>
-          </>
-        ) : (
-          '소스 코드 저장소 주소가 아직 설정되지 않았어요.'
-        )}
+        소스 코드: <a href={sourceUrl()}>{sourceUrl()}</a>
       </p>
       <h2>사용한 오픈소스</h2>
       <CreditList items={DEPENDENCIES} />

@@ -32,9 +32,21 @@ it('테마 토글', () => {
   expect(screen.getByRole('button', { name: '라이트 모드로 전환' })).toBeInTheDocument()
 })
 
-it('소스 주소가 없으면 GitHub 링크를 숨긴다', () => {
+it('소스 주소가 없으면 기본 저장소로 GitHub 링크를 보인다', () => {
   renderRoute('/licenses')
-  expect(screen.queryByRole('link', { name: 'GitHub 저장소' })).toBeNull()
+  expect(screen.getByRole('link', { name: 'GitHub 저장소' })).toHaveAttribute('href', 'https://github.com/LukaPark/chessling')
+})
+
+it('라이선스 화면은 항상 소스 코드 주소를 보여 준다', async () => {
+  renderRoute('/licenses')
+  expect(await screen.findByRole('link', { name: 'https://github.com/LukaPark/chessling' })).toBeInTheDocument()
+  expect(screen.queryByText(/아직 설정되지 않았어요/)).toBeNull()
+})
+
+it('라이선스 화면은 설정된 소스 주소를 우선한다', async () => {
+  vi.stubEnv('VITE_SOURCE_URL', 'https://github.com/x/chessling')
+  renderRoute('/licenses')
+  expect(await screen.findByRole('link', { name: 'https://github.com/x/chessling' })).toBeInTheDocument()
 })
 
 it('소스 주소가 있으면 GitHub 링크를 보인다', () => {

@@ -6,13 +6,14 @@ import { IconLink } from '../ui/Button'
 import { cx } from '../ui/cx'
 import { GitHubMark } from './GitHubMark'
 import { useStore } from './StoreContext'
+import { sourceUrl } from './sourceUrl'
 import { ThemeToggle } from './ThemeToggle'
 
 const navClass = ({ isActive }: { isActive: boolean }) => cx(s.navLink, isActive && s.navActive)
 
 export function Layout() {
   const store = useStore()
-  const SOURCE_URL = import.meta.env.VITE_SOURCE_URL
+  const SOURCE_URL = sourceUrl()
   return (
     <div className={s.shell}>
       <a href="#main" className={s.skip}>
@@ -39,11 +40,9 @@ export function Layout() {
               <ThemeToggle />
             </span>
             <IconLink icon={Settings} label="설정" to="/settings" />
-            {SOURCE_URL && (
-              <a href={SOURCE_URL} className={cx(s.navLink, s.github)} aria-label="GitHub 저장소">
-                <GitHubMark />
-              </a>
-            )}
+            <a href={SOURCE_URL} className={cx(s.navLink, s.github)} aria-label="GitHub 저장소">
+              <GitHubMark />
+            </a>
           </nav>
         </div>
       </header>

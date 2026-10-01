@@ -1,8 +1,7 @@
 /// <reference types="vitest/config" />
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
-import { assertSourceUrl } from './scripts/assertSourceUrl.ts'
 
 // 라이브러리를 성격별 청크로 나눈다. 앱 코드가 바뀌어도 라이브러리 청크는 캐시에 남는다.
 const VENDOR_CHUNKS: Array<[chunk: string, packages: string[]]> = [
@@ -25,12 +24,7 @@ const isolationHeaders = {
   'Cross-Origin-Embedder-Policy': 'credentialless',
 }
 
-export default defineConfig(({ command, mode }) => {
-  // GPL 소스 제공 링크 없이 Vercel에 배포되지 않도록 빌드를 막는다.
-  if (command === 'build') {
-    const env = loadEnv(mode, process.cwd(), 'VITE_')
-    assertSourceUrl({ VERCEL: process.env.VERCEL, VITE_SOURCE_URL: process.env.VITE_SOURCE_URL || env.VITE_SOURCE_URL })
-  }
+export default defineConfig(() => {
   return {
     plugins: [react(), vanillaExtractPlugin()],
     build: { target: 'es2022', rolldownOptions: { output: { manualChunks } } },
