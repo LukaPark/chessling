@@ -31,7 +31,6 @@ import { NotFound } from '../NotFound'
 import { ForkDialog } from '../play/ForkDialog'
 import { JudgmentCard } from './JudgmentCard'
 import { ActiveQuiz } from './quiz/ActiveQuiz'
-import { QuizButton } from './quiz/QuizButton'
 import { EvaluationCancelled, type QuizFinish } from './quiz/useQuiz'
 import { useAnnotations } from './useAnnotations'
 import { ReviewSummary } from './ReviewSummary'
@@ -248,13 +247,21 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
             <EvalBar score={score} orientation={orientation} />
             <div className={g.boardWrap} data-testid="board-swipe" {...swipe}>
               <Board fen={fen} orientation={orientation} lastMoveUci={plies[ply].uci} check={isCheck(fen)} shapes={shapes} />
-              {/* 리뷰 중에는 엔진을 리뷰가 쓰므로 퀴즈를 열지 않는다 */}
-              {sceneHere && !reviewing && <QuizButton onStart={() => setActiveScene(sceneHere)} done={results.has(sceneHere.id)} />}
             </div>
           </div>
 
           <div className={g.panel}>
-            <JudgmentCard plies={plies} ply={ply} review={review} onStartReview={runReview} hint={hint} hintUci={hintUci} comment={comment} />
+            <JudgmentCard
+              plies={plies}
+              ply={ply}
+              review={review}
+              onStartReview={runReview}
+              hint={hint}
+              hintUci={hintUci}
+              comment={comment}
+              // 리뷰 중에는 엔진을 리뷰가 쓰므로 퀴즈를 열지 않는다
+              quiz={sceneHere && !reviewing ? { done: results.has(sceneHere.id), onStart: () => setActiveScene(sceneHere) } : null}
+            />
             {review.status === 'done' && (
               <ReviewSummary
                 review={review.review}

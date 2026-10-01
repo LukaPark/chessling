@@ -1,28 +1,6 @@
 import { keyframes, style } from '@vanilla-extract/css'
 import { fontSize, radius, space, vars, weight } from '../tokens.css'
 
-export const overlay = style({
-  position: 'absolute',
-  top: space[2],
-  right: space[2],
-  zIndex: 3,
-  width: 44,
-  height: 44,
-  display: 'grid',
-  placeItems: 'center',
-  borderRadius: radius.pill,
-  border: 0,
-  background: vars.color.accent,
-  color: vars.color.onAccent,
-  cursor: 'pointer',
-  boxShadow: '0 2px 8px rgba(0,0,0,.25)',
-  selectors: { '&:hover': { background: vars.color.accentHover } },
-})
-export const overlayDone = style({
-  background: vars.color.surfaceSubtle,
-  color: vars.color.ink,
-  selectors: { '&:hover': { background: vars.color.surface } },
-})
 export const card = style({ display: 'grid', gap: space[3], padding: space[4], borderRadius: radius.surface, background: vars.color.surfaceSubtle })
 export const prompt = style({ margin: 0, fontSize: fontSize.lead, fontWeight: weight.medium })
 export const steps = style({ display: 'flex', gap: space[1], margin: 0 })

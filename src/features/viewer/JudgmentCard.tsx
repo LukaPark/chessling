@@ -16,6 +16,7 @@ import { Icon } from '../../ui/Icon'
 import { SPRING } from '../../ui/motion'
 import { useDebounced } from '../../ui/useDebounced'
 import { CommentText } from './CommentText'
+import { QuizButton } from './quiz/QuizButton'
 import { ReviewPanel } from './ReviewPanel'
 import type { ReviewState } from './useReview'
 
@@ -27,6 +28,7 @@ export function JudgmentCard({
   hint,
   hintUci,
   comment,
+  quiz,
 }: {
   plies: Ply[]
   ply: number
@@ -35,6 +37,8 @@ export function JudgmentCard({
   hint: boolean
   hintUci: string | null
   comment?: { text: string; key?: boolean } | null
+  /** 이 포지션에서 시작하는 퀴즈 장면이 있을 때 */
+  quiz?: { done: boolean; onStart: () => void } | null
 }) {
   const data = review.status === 'done' ? review.review : review.status === 'running' && review.partial.length > ply ? buildReview(plies.slice(0, review.partial.length), review.partial, REVIEW_DEPTH) : null
   const label = data && ply > 0 ? data.labels[ply] : null
@@ -61,6 +65,11 @@ export function JudgmentCard({
         </p>
       )}
       {comment && <CommentText key={ply} text={comment.text} />}
+      {quiz && (
+        <div className={v.quizRow}>
+          <QuizButton done={quiz.done} onStart={quiz.onStart} />
+        </div>
+      )}
       {hint && (
         <p className={v.hint}>
           <Icon icon={Lightbulb} size={16} />

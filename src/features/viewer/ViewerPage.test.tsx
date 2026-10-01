@@ -92,10 +92,10 @@ describe('ViewerPage', () => {
   it('퀴즈: 장면 포지션에서 버튼을 눌러 보드로 풀고, 결과를 저장한다', async () => {
     const { store } = renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     await screen.findByRole('region', { name: '이번 수 판정' })
-    expect(screen.queryByRole('button', { name: '퀴즈: 이 장면 직접 두기' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '이 장면 퀴즈 풀기' })).toBeNull()
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     fireEvent.keyDown(window, { key: 'ArrowRight' })
-    fireEvent.click(await screen.findByRole('button', { name: '퀴즈: 이 장면 직접 두기' }, { timeout: 3000 }))
+    fireEvent.click(await screen.findByRole('button', { name: '이 장면 퀴즈 풀기' }, { timeout: 3000 }))
 
     const quiz = screen.getByRole('region', { name: '퀴즈' })
     expect(within(quiz).getByText('두 번째 수를 둬 보세요.')).toBeInTheDocument()
@@ -115,7 +115,7 @@ describe('ViewerPage', () => {
     expect(await screen.findByText('2. Nf3')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '다음 수' })).not.toBeDisabled()
     fireEvent.keyDown(window, { key: 'ArrowLeft' })
-    expect(await screen.findByRole('button', { name: '퀴즈: 다시 풀기 (푼 장면)' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: '퀴즈 다시 풀기' })).toBeInTheDocument()
   })
 
   it('퀴즈: 그만두면 그 자리로 돌아오고 결과를 남기지 않는다', async () => {
@@ -123,7 +123,7 @@ describe('ViewerPage', () => {
     await screen.findByRole('region', { name: '이번 수 판정' })
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     fireEvent.keyDown(window, { key: 'ArrowRight' })
-    fireEvent.click(await screen.findByRole('button', { name: '퀴즈: 이 장면 직접 두기' }, { timeout: 3000 }))
+    fireEvent.click(await screen.findByRole('button', { name: '이 장면 퀴즈 풀기' }, { timeout: 3000 }))
     fireEvent.click(within(screen.getByRole('region', { name: '퀴즈' })).getByRole('button', { name: '그만두기' }))
     expect(screen.queryByRole('region', { name: '퀴즈' })).toBeNull()
     expect(screen.getByText('1... e5')).toBeInTheDocument()
