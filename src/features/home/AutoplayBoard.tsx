@@ -24,7 +24,7 @@ export function AutoplayBoard({ classic }: { classic: Classic }) {
   const cur = plies[auto.ply]
 
   return (
-    <figure ref={ref} className={h.showcase} aria-label="오늘의 명국 자동 재생">
+    <figure ref={ref} className={h.showcase} aria-label="오늘의 명경기 자동 재생">
       <div className={h.showcaseBoard} onPointerDown={pause}>
         <Board fen={cur.fen} orientation="white" lastMoveUci={cur.uci} check={isCheck(cur.fen)} />
       </div>

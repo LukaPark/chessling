@@ -37,10 +37,10 @@ describe('LinkButton / IconButton / IconLink', () => {
   it('LinkButton은 링크 역할', () => {
     render(
       <MemoryRouter>
-        <LinkButton to="/classics">명국</LinkButton>
+        <LinkButton to="/classics">명경기</LinkButton>
       </MemoryRouter>,
     )
-    expect(screen.getByRole('link', { name: '명국' })).toHaveAttribute('href', '/classics')
+    expect(screen.getByRole('link', { name: '명경기' })).toHaveAttribute('href', '/classics')
   })
   it('IconButton은 label을 접근성 이름으로 쓴다', () => {
     render(<IconButton icon={Plus} label="추가" pressed />)

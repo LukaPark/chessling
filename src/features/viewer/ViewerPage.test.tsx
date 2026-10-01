@@ -23,7 +23,7 @@ function analysisEngine() {
 }
 
 describe('ViewerPage', () => {
-  it('명국을 불러와 키보드로 수를 넘기고 엔진 평가를 보여준다', async () => {
+  it('명경기를 불러와 키보드로 수를 넘기고 엔진 평가를 보여준다', async () => {
     renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     expect(await screen.findByRole('heading', { name: /Paul Morphy/ })).toBeInTheDocument()
     expect(screen.getByTestId('board')).toHaveAttribute('data-fen', START)
@@ -47,7 +47,7 @@ describe('ViewerPage', () => {
     expect(screen.getByTestId('board')).toHaveAttribute('data-fen', AFTER_E4)
   })
 
-  it('없는 명국은 찾을 수 없다는 에러', async () => {
+  it('없는 명경기는 찾을 수 없다는 에러', async () => {
     renderRoute('/game/classic/nope')
     expect(await screen.findByText(/찾을 수 없어요/)).toBeInTheDocument()
   })

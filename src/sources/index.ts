@@ -56,7 +56,7 @@ export async function getGame(ref: GameRef, qc: QueryClient): Promise<GameRecord
     }
     case 'classic': {
       const c = getClassic(ref.slug)
-      if (!c) throw new HttpError('not_found', 404, `명국 ${ref.slug}를 찾을 수 없습니다`)
+      if (!c) throw new HttpError('not_found', 404, `명경기 ${ref.slug}를 찾을 수 없습니다`)
       return classicToRecord(c)
     }
   }

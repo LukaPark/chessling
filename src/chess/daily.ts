@@ -20,7 +20,7 @@ export function shuffledOrder(n: number, seed = SEED): number[] {
 }
 
 export function classicOfTheDay<T>(items: readonly T[], now: Date): T {
-  if (items.length === 0) throw new Error('명국 컬렉션이 비어 있습니다')
+  if (items.length === 0) throw new Error('명경기 모음이 비어 있습니다')
   const [y, m, d] = kstDateString(now).split('-').map(Number)
   const day = Math.floor(Date.UTC(y, m - 1, d) / 86_400_000)
   const order = shuffledOrder(items.length)

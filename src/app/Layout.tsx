@@ -29,7 +29,7 @@ export function Layout() {
               대회
             </NavLink>
             <NavLink to="/classics" className={navClass}>
-              명국
+              명경기
             </NavLink>
             <NavLink to="/forks" className={navClass}>
               내 분기

@@ -9,10 +9,10 @@ export function ClassicsPage() {
   return (
     <div className={p.page}>
       <header className={p.pageHead}>
-        <h1 className={p.pageTitle}>명국 컬렉션</h1>
+        <h1 className={p.pageTitle}>명경기 모음</h1>
         <p className={p.lead}>시대마다 체스의 흐름을 바꾼 대국 {classics.length}판을 모았어요.</p>
       </header>
-      <ul className={l.classicGrid} aria-label="명국 목록">
+      <ul className={l.classicGrid} aria-label="명경기 목록">
         {classics.map((c, i) => (
           <li key={c.slug}>
             <Reveal index={i % 2} className={l.classicItem}>

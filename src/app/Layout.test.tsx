@@ -19,7 +19,7 @@ it('본문 바로가기와 주요 메뉴', () => {
   const nav = screen.getByRole('navigation', { name: '주요 메뉴' })
   expect(nav).toBeInTheDocument()
   expect(screen.getByRole('link', { name: '대회' })).toHaveAttribute('href', '/events')
-  expect(screen.getByRole('link', { name: '명국' })).toHaveAttribute('href', '/classics')
+  expect(screen.getByRole('link', { name: '명경기' })).toHaveAttribute('href', '/classics')
   expect(screen.getByRole('link', { name: '내 분기' })).toHaveAttribute('href', '/forks')
   expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
 })

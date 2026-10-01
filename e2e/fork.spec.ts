@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { clickSquare } from './helpers'
 
-test('명국에서 분기해 한 수 두고, 새로고침해도 이어진다', async ({ page }) => {
+test('명경기에서 분기해 한 수 두고, 새로고침해도 이어진다', async ({ page }) => {
   await page.goto('/game/classic/opera-game')
   await expect(page.getByRole('heading', { name: /Paul Morphy/ })).toBeVisible()
   // 1. e4 e5 2. Nf3 d6 → 백 차례. 카운터로 확인하며 한 수씩 넘긴다

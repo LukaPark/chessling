@@ -1,6 +1,6 @@
 # Chessling ♜
 
-Chess.com·Lichess 대국, 최근 톱 대회, 역사적 명국을 브라우저 안의 Stockfish로 분석하고,
+Chess.com·Lichess 대국, 최근 톱 대회, 역사적 명경기를 브라우저 안의 Stockfish로 분석하고,
 원하는 수에서 분기해 엔진과 이어 둘 수 있는 웹 앱입니다. 서버 없이 모든 연산이 브라우저에서 돌아갑니다.
 
 ## 개발
@@ -11,7 +11,7 @@ Chess.com·Lichess 대국, 최근 톱 대회, 역사적 명국을 브라우저 �
     npm run e2e          # Playwright (빌드 후 preview 서버에서 실행)
     npm run engine:smoke # 실제 Stockfish로 메이트 인 1 확인
 
-명국 추가: `npx tsx scripts/add-classic.ts <file.pgn> --slug <slug> --title <제목> --summary <소개>`
+명경기 추가: `npx tsx scripts/add-classic.ts <file.pgn> --slug <slug> --title <제목> --summary <소개>`
 
 ## 배포
 

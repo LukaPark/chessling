@@ -80,7 +80,7 @@ export function LicensesPage() {
         Chessling의 GPL-3.0-or-later 조건으로 함께 배포해요.
       </p>
       <CreditList items={PIECE_SETS} />
-      <p>대국 데이터는 Chess.com 공개 API와 Lichess API에서 가져옵니다. 명국 소개 글은 Chessling이 직접 작성했습니다.</p>
+      <p>대국 데이터는 Chess.com 공개 API와 Lichess API에서 가져옵니다. 명경기 소개 글은 Chessling이 직접 작성했습니다.</p>
     </div>
   )
 }

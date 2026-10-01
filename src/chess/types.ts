@@ -24,7 +24,7 @@ export interface GameSummary {
   white: Player
   black: Player
   result: Result
-  /** YYYY-MM-DD (명국은 연도만 알 수 있으면 YYYY) */
+  /** YYYY-MM-DD (명경기는 연도만 알 수 있으면 YYYY) */
   date: string
   speed: Speed
   timeControl?: string

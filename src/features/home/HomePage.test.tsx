@@ -34,12 +34,12 @@ describe('HomePage', () => {
     expect(router.state.location.pathname).toBe('/')
   })
 
-  it('오늘의 명국 링크와 자동 재생 조작', () => {
+  it('오늘의 명경기 링크와 자동 재생 조작', () => {
     renderRoute('/')
     const today = todaysClassic()
     expect(screen.getByRole('link', { name: today.title })).toHaveAttribute('href', `/game/classic/${today.slug}`)
-    expect(screen.getByRole('link', { name: '오늘의 명국 보기' })).toHaveAttribute('href', `/game/classic/${today.slug}`)
-    const figure = screen.getByRole('figure', { name: '오늘의 명국 자동 재생' })
+    expect(screen.getByRole('link', { name: '오늘의 명경기 보기' })).toHaveAttribute('href', `/game/classic/${today.slug}`)
+    const figure = screen.getByRole('figure', { name: '오늘의 명경기 자동 재생' })
     expect(figure).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '재생' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '이 대국 분석하기' })).toHaveAttribute('href', `/game/classic/${today.slug}`)

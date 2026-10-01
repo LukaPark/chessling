@@ -59,7 +59,7 @@ export function HomePage() {
           <Button type="submit">불러오기</Button>
         </form>
         <LinkButton tone="secondary" to={refToPath({ kind: 'classic', slug: today.slug })}>
-          오늘의 명국 보기
+          오늘의 명경기 보기
         </LinkButton>
         <AutoplayBoard classic={today} />
       </section>
@@ -74,7 +74,7 @@ export function HomePage() {
 function TodayStory({ classic }: { classic: Classic }) {
   const to = refToPath({ kind: 'classic', slug: classic.slug })
   return (
-    <Section title="오늘의 명국" description={`${classic.white} vs ${classic.black} · ${classic.event ? `${classic.event}, ` : ''}${classic.year}`}>
+    <Section title="오늘의 명경기" description={`${classic.white} vs ${classic.black} · ${classic.event ? `${classic.event}, ` : ''}${classic.year}`}>
       <div className={h.story}>
         <div>
           <h3 className={h.storyTitle}>
@@ -125,7 +125,7 @@ function ClassicsTeaser({ exclude }: { exclude: string }) {
   const picks = [...new Set([0, 1 / 3, 2 / 3, 1].map((f) => Math.round(f * (pool.length - 1))))].map((i) => pool[i])
   return (
     <Section
-      title="명국 컬렉션"
+      title="명경기 모음"
       description="시대마다 체스의 흐름을 바꾼 대국들이에요."
       action={
         <LinkButton tone="ghost" size="sm" icon={ArrowRight} to="/classics">

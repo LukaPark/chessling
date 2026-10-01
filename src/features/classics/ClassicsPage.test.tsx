@@ -6,9 +6,9 @@ import { renderRoute } from '../../test/renderRoute'
 
 afterEach(cleanup)
 
-it('연도순으로 명국을 나열한다', async () => {
+it('연도순으로 명경기를 나열한다', async () => {
   renderRoute('/classics')
-  const list = await screen.findByRole('list', { name: '명국 목록' })
+  const list = await screen.findByRole('list', { name: '명경기 목록' })
   const links = within(list).getAllByRole('link')
   expect(links.map((a) => a.textContent)).toEqual(classics.map((c) => c.title))
   expect(links[0]).toHaveAttribute('href', `/game/classic/${classics[0].slug}`)
