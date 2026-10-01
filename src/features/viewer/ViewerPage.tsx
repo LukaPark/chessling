@@ -15,6 +15,7 @@ import { ErrorView } from '../../components/ErrorView'
 import { EvalBar } from '../../components/EvalBar'
 import { EvalGraph } from '../../components/EvalGraph'
 import { MoveList } from '../../components/MoveList'
+import { commentsForGame } from '../../engine/comment'
 import { isMultiThreaded } from '../../engine/engines'
 import { terminalScore } from '../../engine/review'
 import { queryKeys } from '../../sources'
@@ -135,6 +136,18 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
 
   const positions = review.status === 'done' ? review.review.positions : review.status === 'running' ? review.partial : []
   const labels = review.status === 'done' ? review.review.labels : undefined
+  const generated = useMemo(
+    () =>
+      review.status === 'done' && !annotations
+        ? commentsForGame({ plies, positions: review.review.positions, labels: review.review.labels, seed: refKey(gameRef) })
+        : null,
+    [review, annotations, plies, gameRef],
+  )
+  const comment = authored
+    ? { text: authored.text, key: authored.key }
+    : generated?.[ply]
+      ? { text: generated[ply]!.text }
+      : null
   const graphScores = useMemo(() => plies.map((_, i) => positions[i]?.score ?? null), [plies, positions])
   const terminal = useMemo(() => terminalScore(fen), [fen])
   const score = positions[ply]?.score ?? terminal ?? live.lines[0]?.score ?? null
@@ -162,7 +175,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
       </div>
 
       <div className={g.panel}>
-        <JudgmentCard plies={plies} ply={ply} review={review} onStartReview={runReview} hint={hint} hintUci={hintUci} comment={authored ? { text: authored.text, key: authored.key } : null} />
+        <JudgmentCard plies={plies} ply={ply} review={review} onStartReview={runReview} hint={hint} hintUci={hintUci} comment={comment} />
         {review.status === 'done' && (
           <ReviewSummary review={review.review} startTurn={turnOf(plies[0].fen)} onRerun={runReview} />
         )}

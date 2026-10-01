@@ -88,6 +88,16 @@ describe('ViewerPage', () => {
     expect(screen.getByRole('img', { name: '평가 그래프' })).toBeInTheDocument()
   })
 
+  it('해설이 없는 경기는 리뷰 뒤 생성 코멘트를 보여 준다', async () => {
+    renderRoute('/game/classic/immortal-game', { engines: { analysis: analysisEngine() } })
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    fireEvent.click(within(card).getByRole('button', { name: '리뷰 실행' }))
+    await screen.findByText(/백 정확도/)
+    fireEvent.keyDown(window, { key: 'Home' })
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(within(card).getByText(/중앙|공간|가운데/)).toBeInTheDocument() // 1. e4
+  })
+
   it('접이식 버튼에 포커스가 있어도 화살표 키로 이동한다', async () => {
     renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     const trigger = await screen.findByRole('button', { name: '엔진 라인' })
