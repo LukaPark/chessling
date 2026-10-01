@@ -19,7 +19,9 @@
     "engine:smoke": "node scripts/engine-smoke.mjs",
     "postinstall": "node scripts/copy-engine.mjs",
     "annotate:facts": "tsx scripts/annotate/facts.ts",
-    "annotate:preview": "tsx scripts/annotate/preview-comments.ts"
+    "annotate:preview": "tsx scripts/annotate/preview-comments.ts",
+    "annotate:view": "tsx scripts/annotate/view-facts.ts",
+    "annotate:probe": "tsx scripts/annotate/probe-moves.ts"
   },
   "dependencies": {
     "@lichess-org/chessground": "10.4.1",
