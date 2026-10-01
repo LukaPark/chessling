@@ -26,11 +26,15 @@ export function compose(input: CommentInput, used: string[]): { comment: MoveCom
   const mover = turnOf(input.plies[input.index - 1].fen) === 'w' ? '백' : '흑'
   const ctx: PhraseCtx = { mover, enemy: mover === '백' ? '흑' : '백' }
   const label = input.labels[input.index]
-  const order = label && BAD.has(label) ? PRIORITY_BAD : PRIORITY_GOOD
+  const bad = Boolean(label && BAD.has(label))
+  // 좋은 수인데 상대에게 메이트가 있으면(강요된 응수 등) 둔 수 이야기를 먼저 한다
+  const threatOnMover = facts.some((f) => f.kind === 'mateThreat' && f.forWhite !== (mover === '백'))
+  const order = bad ? PRIORITY_BAD : threatOnMover ? demote(PRIORITY_GOOD, 'mateThreat') : PRIORITY_GOOD
   const picked = order.flatMap((k) => facts.filter((f) => f.kind === k)).filter((f, i, arr) => arr.findIndex((g) => g.kind === f.kind) === i)
   const main = picked.filter((f) => f.kind !== 'band').slice(0, 2)
   const band = picked.find((f) => f.kind === 'band')
-  const chosen = band ? [...main, band] : main
+  // 체크메이트는 그 한마디로 끝낸다
+  const chosen = picked[0]?.kind === 'mate' ? [picked[0]] : band ? [...main, band] : main
   const keys: string[] = []
   const parts: string[] = []
   const seed = hash(`${input.seed}:${input.index}`)
@@ -46,6 +50,12 @@ export function compose(input: CommentInput, used: string[]): { comment: MoveCom
     parts.push(list[i](f, ctx))
   }
   return { comment: { text: parts.join(' '), facts: chosen.map((f) => f.kind) }, keys }
+}
+
+/** kind를 band 바로 앞으로 옮긴다 */
+function demote(order: Fact['kind'][], kind: Fact['kind']): Fact['kind'][] {
+  const rest = order.filter((k) => k !== kind && k !== 'band')
+  return [...rest, kind, 'band']
 }
 
 function pickIndex(seed: number, n: number, kind: string, used: string[]): number {

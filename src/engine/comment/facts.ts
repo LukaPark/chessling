@@ -122,7 +122,8 @@ export function extractFacts(input: CommentInput): Fact[] {
   // 공짜로 놓인 기물: 움직인 기물, 또는 움직이면서 방어가 풀린 자기 기물
   if (isHanging(after, move.to) && !move.captured) facts.push({ kind: 'hanging', piece: move.piece, square: move.to })
 
-  if (move.piece === 'r') {
+  // 잡는 수는 잡은 이야기로 충분하다
+  if (move.piece === 'r' && !move.captured) {
     const file = move.to[0]
     const pawns = fileHasPawn(after, file)
     if (!pawns.own) facts.push({ kind: 'rookFile', file, open: !pawns.enemy })

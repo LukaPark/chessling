@@ -4,7 +4,7 @@ import type { Ply } from '../../chess/types'
 import type { MoveLabel } from '../judge'
 import type { ReviewedPosition } from '../review'
 import type { Fact } from './facts'
-import { commentsForGame } from './index'
+import { commentFor, commentsForGame } from './index'
 import { PHRASES, QUIET } from './phrases.ko'
 
 const BANNED = [/것입니다/, /중요한 순간/, /놀라운/, /라고 할 수 있/, /매우 흥미로운/]
@@ -46,6 +46,29 @@ describe('commentsForGame', () => {
   })
 })
 
+function from(fen: string, sans: string[]): Ply[] {
+  const c = new Chess(fen)
+  const out: Ply[] = [{ san: null, uci: null, fen }]
+  for (const s of sans) {
+    const m = c.move(s)
+    out.push({ san: m.san, uci: m.from + m.to + (m.promotion ?? ''), fen: c.fen() })
+  }
+  return out
+}
+const at = (score: ReviewedPosition['score']): ReviewedPosition => ({ score, best: null, pv: [], second: null, legalMoves: 20 })
+
+describe('commentFor 고르기', () => {
+  it('체크메이트에는 메이트만 말한다', () => {
+    const plies = from('6k1/5ppp/8/8/8/8/8/3R2K1 w - - 0 1', ['Rd8#'])
+    expect(commentFor({ plies, positions: [at({ cp: 0 }), at({ cp: 10000 })], labels: [null, 'best'], index: 1, seed: 's' })?.facts).toEqual(['mate'])
+  })
+  it('상대의 메이트 위협은 둔 수 이야기 뒤에 온다', () => {
+    const plies = from('k7/8/8/8/8/2P5/2r5/4K3 b - - 0 1', ['Rxc3'])
+    const c = commentFor({ plies, positions: [at({ cp: 0 }), at({ mate: 3 })], labels: [null, 'best'], index: 1, seed: 's' })
+    expect(c?.facts.slice(0, 2)).toEqual(['capture', 'mateThreat'])
+  })
+})
+
 describe('문장 틀', () => {
   const samples: Fact[] = [
     { kind: 'mate' },
@@ -81,6 +104,12 @@ describe('문장 틀', () => {
   })
   it('조사가 받침과 맞는다', () => {
     for (const line of lines) expect(line).not.toMatch(WRONG_JOSA)
+  })
+  it('메이트 위협은 어느 쪽 메이트인지 말한다', () => {
+    for (const p of PHRASES.mateThreat) {
+      expect(p({ kind: 'mateThreat', forWhite: false, inMoves: 2 }, { mover: '백', enemy: '흑' })).toMatch(/흑/)
+      expect(p({ kind: 'mateThreat', forWhite: true, inMoves: 2 }, { mover: '흑', enemy: '백' })).toMatch(/백/)
+    }
   })
   it('금칙어가 없다', () => {
     for (const line of lines) for (const b of BANNED) expect(line).not.toMatch(b)

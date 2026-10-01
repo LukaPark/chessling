@@ -59,4 +59,8 @@ describe('extractFacts', () => {
     const plies = pliesFrom(new Chess().fen(), ['e4'])
     expect(extractFacts(input(plies, [pos(0), pos(400)], 1))).toContainEqual({ kind: 'band', from: 'equal', to: 'whiteBetter' })
   })
+  it('잡는 룩 수에는 줄 이야기를 붙이지 않는다', () => {
+    const plies = pliesFrom('4k3/3n4/8/8/8/8/8/3RK3 w - - 0 1', ['Rxd7'])
+    expect(kinds(extractFacts(input(plies, [pos(0), pos(500)], 1)))).not.toContain('rookFile')
+  })
 })

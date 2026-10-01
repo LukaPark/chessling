@@ -110,8 +110,8 @@ export const PHRASES: { [K in Fact['kind']]: Phrase<K>[] } = {
   ],
   mateThreat: [
     (f) => `${f.forWhite ? '백' : '흑'}에게 ${f.inMoves}수 메이트가 보여요.`,
-    (f) => `이제 ${f.inMoves}수 안에 끝낼 길이 있어요.`,
-    (f) => `메이트까지 ${f.inMoves}수.`,
+    (f) => `이제 ${J(f.forWhite ? '백' : '흑', '이/가')} ${f.inMoves}수 안에 끝낼 길이 있어요.`,
+    (f) => `${J(f.forWhite ? '백' : '흑', '은/는')} ${f.inMoves}수면 메이트할 수 있어요.`,
   ],
   band: [(f) => BAND_LINE[f.to][0], (f) => BAND_LINE[f.to][1], (f) => BAND_LINE[f.to][2]],
 }
