@@ -38,8 +38,8 @@ export function identifyOpening(plies: Ply[], data: OpeningData, lookup = buildL
   for (let i = 1; i < plies.length; i++) {
     const entry = lookup.get(epdOf(plies[i].fen))
     if (entry) {
-      // 이름이 그대로면 배지를 다시 달지 않도록 처음 맞은 수와 항목을 유지한다
-      if (current?.entry.name !== entry.name) current = describe(i, entry, data.ko)
+      // 이름이 그대로면 배지를 다시 달지 않도록 처음 맞은 수는 유지하고, 항목(ECO·수순)은 최신으로 바꾼다
+      current = current && entry.name === current.entry.name ? { ...describe(i, entry, data.ko), ply: current.ply } : describe(i, entry, data.ko)
       lastMatched = i
     }
     byPly.push(current)

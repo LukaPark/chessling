@@ -32,14 +32,14 @@ describe('identifyOpening', () => {
     expect(t.byPly[1]).toBeNull() // 1.e4는 이 색인에 없다
     expect(t.byPly[2]).toMatchObject({ ply: 2, entry: { eco: 'B20' } })
     expect(t.byPly[3]).toMatchObject({ ply: 2, entry: { eco: 'B20' } })
-    // 2...d6(B50)도 이름이 같은 "Sicilian Defense"라 처음 맞은 수와 항목을 그대로 둔다
-    expect(t.byPly[4]).toMatchObject({ ply: 2, entry: { eco: 'B20' }, family: { name: '시실리안 디펜스' }, variation: null })
+    // 2...d6(B50)도 이름이 같은 "Sicilian Defense"라 처음 맞은 수는 그대로 두고 항목만 최신으로 바꾼다
+    expect(t.byPly[4]).toMatchObject({ ply: 2, entry: { eco: 'B50' }, family: { name: '시실리안 디펜스' }, variation: null })
   })
 
   it('이름이 같은 포지션이 이어지면 처음 맞은 수를 유지하고, 이탈 판정은 마지막으로 맞은 수를 따른다', () => {
     const t = identifyOpening(game('1. e4 c5 2. Nf3 d6 3. c3'), DATA)!
-    expect(t.byPly[4]).toMatchObject({ ply: 2, entry: { name: 'Sicilian Defense' } })
-    expect(t.byPly[5]).toMatchObject({ ply: 2 })
+    expect(t.byPly[4]).toMatchObject({ ply: 2, entry: { eco: 'B50', name: 'Sicilian Defense' } })
+    expect(t.byPly[5]).toMatchObject({ ply: 2, entry: { eco: 'B50' } })
     // 마지막으로 맞은 수는 4(2...d6)라서 이탈은 5수째(3.c3)
     expect(t.deviation).toEqual({ ply: 5, theory: ['d2d4'] })
   })
