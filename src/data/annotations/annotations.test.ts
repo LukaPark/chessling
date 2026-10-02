@@ -100,6 +100,15 @@ describe('validateAnnotations', () => {
       a.scenes = [{ id: 's', startPly: 2, side: 'w', prompt: '둬 보세요.', source: 'authored', steps: [{ answerUci: 'g1f3' }] }]
       expect(validateAnnotations(a, plies).some((e) => e.includes('장면 s') && e.includes('가이드'))).toBe(true)
     })
+    it('장면 시작 두 수 전(startPly-2) 가이드가 첫 정답을 보여 줘도 오류, 세 수 전(startPly-3)은 허용', () => {
+      const scene = { id: 's', startPly: 3, side: 'b' as const, prompt: '둬 보세요.', source: 'authored' as const, steps: [{ answerUci: 'b8c6' }] }
+      const two = withGuide(1, ['b8c6'])
+      two.scenes = [scene]
+      expect(validateAnnotations(two, plies).some((e) => e.includes('장면 s') && e.includes('1수 가이드'))).toBe(true)
+      const three = withGuide(0, ['b8c6'])
+      three.scenes = [scene]
+      expect(validateAnnotations(three, plies).some((e) => e.includes('장면 s') && e.includes('가이드'))).toBe(false)
+    })
     it('장면 시작 한 수 전(ply-1)이나 두 수 전 가이드가 첫 정답을 보여 줘도 오류', () => {
       const a = withGuide(1, ['g1f3'])
       a.scenes = [{ id: 's', startPly: 2, side: 'w', prompt: '둬 보세요.', source: 'authored', steps: [{ answerUci: 'g1f3' }] }]
