@@ -11,9 +11,12 @@ import { JUDGMENT_META, type MoveLabel } from '../../engine/judge'
 import * as v from '../../styles/features/viewer.css'
 import { visuallyHidden } from '../../ui/a11y.css'
 import { cx } from '../../ui/cx'
+import { Badge } from '../../ui/Badge'
 import { Icon } from '../../ui/Icon'
 import { SPRING } from '../../ui/motion'
 import { useDebounced } from '../../ui/useDebounced'
+import { CommentText } from './CommentText'
+import { QuizButton } from './quiz/QuizButton'
 import { ReviewPanel } from './ReviewPanel'
 import type { ReviewState } from './useReview'
 
@@ -24,6 +27,8 @@ export function JudgmentCard({
   onStartReview,
   hint,
   hintUci,
+  comment,
+  quiz,
 }: {
   plies: Ply[]
   ply: number
@@ -31,6 +36,9 @@ export function JudgmentCard({
   onStartReview: () => void
   hint: boolean
   hintUci: string | null
+  comment?: { text: string; key?: boolean } | null
+  /** 이 포지션에서 시작하는 퀴즈 장면이 있을 때 */
+  quiz?: { done: boolean; onStart: () => void } | null
 }) {
   const data = review.status === 'done' ? review.review : review.status === 'running' && review.partial.length > ply ? buildReview(plies.slice(0, review.partial.length), review.partial, REVIEW_DEPTH) : null
   const label = data && ply > 0 ? data.labels[ply] : null
@@ -47,6 +55,7 @@ export function JudgmentCard({
 
   return (
     <section aria-label="이번 수 판정" className={v.card}>
+      {comment?.key && <Badge>핵심 장면</Badge>}
       <p className={v.move}>{title}</p>
       {review.status !== 'done' && <ReviewPanel state={review} onStart={onStartReview} />}
       {data && ply > 0 && (label ? <JudgmentLine label={label} /> : <p className={v.detail}>강제 수</p>)}
@@ -54,6 +63,12 @@ export function JudgmentCard({
         <p className={v.detail}>
           형세 {formatScore(before)} → {formatScore(after)}
         </p>
+      )}
+      {comment && <CommentText key={ply} text={comment.text} />}
+      {quiz && (
+        <div className={v.quizRow}>
+          <QuizButton done={quiz.done} onStart={quiz.onStart} />
+        </div>
       )}
       {hint && (
         <p className={v.hint}>

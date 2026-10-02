@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FakeWorker } from '../../engine/testing/fakeWorker'
 import { UciEngine } from '../../engine/UciEngine'
@@ -9,9 +9,25 @@ import { boardProps } from '../../test/boardMock'
 import { renderRoute } from '../../test/renderRoute'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
+vi.mock('../../sources/annotations', () => ({
+  annotationSlugs: () => ['opera-game'],
+  loadAnnotations: async (slug: string) =>
+    slug === 'opera-game'
+      ? {
+          slug,
+          version: 1,
+          scenes: [{ id: 's1', startPly: 2, side: 'w', prompt: '두 번째 수를 둬 보세요.', steps: [{ answerUci: 'g1f3' }], source: 'authored' }],
+          plies: [
+            { ply: 0, text: '파리 오페라 극장 귀빈석에서 둔 한 판이에요.' },
+            { ply: 1, text: '중앙을 차지하며 시작해요.', key: true },
+          ],
+        }
+      : null,
+}))
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+const AFTER_E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
 
 const server = useMswServer()
 afterEach(cleanup)
@@ -23,6 +39,15 @@ function analysisEngine() {
 }
 
 describe('ViewerPage', () => {
+  it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {
+    renderRoute('/game/classic/opera-game')
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    expect(await within(card).findByText('파리 오페라 극장 귀빈석에서 둔 한 판이에요.', {}, { timeout: 3000 })).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(await within(card).findByText('중앙을 차지하며 시작해요.', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(within(card).getByText('핵심 장면')).toBeInTheDocument()
+  })
+
   it('명경기를 불러와 키보드로 수를 넘기고 엔진 평가를 보여준다', async () => {
     renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     expect(await screen.findByRole('heading', { name: /Paul Morphy/ })).toBeInTheDocument()
@@ -62,6 +87,57 @@ describe('ViewerPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: '리뷰 실행' }))
     expect(await screen.findByText(/백 정확도/)).toBeInTheDocument()
     expect(screen.getByRole('img', { name: '평가 그래프' })).toBeInTheDocument()
+  })
+
+  it('퀴즈: 장면 포지션에서 버튼을 눌러 보드로 풀고, 결과를 저장한다', async () => {
+    const { store } = renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
+    await screen.findByRole('region', { name: '이번 수 판정' })
+    expect(screen.queryByRole('button', { name: '이 장면 퀴즈 풀기' })).toBeNull()
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.click(await screen.findByRole('button', { name: '이 장면 퀴즈 풀기' }, { timeout: 3000 }))
+
+    const quiz = screen.getByRole('region', { name: '퀴즈' })
+    expect(within(quiz).getByText('두 번째 수를 둬 보세요.')).toBeInTheDocument()
+    // 평가·판정·이동을 잠근다
+    expect(screen.queryByRole('meter', { name: '평가' })).toBeNull()
+    expect(screen.queryByRole('region', { name: '이번 수 판정' })).toBeNull()
+    expect(screen.getByRole('button', { name: '다음 수' })).toBeDisabled()
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(boardProps.current?.fen).toBe(AFTER_E5)
+    expect(boardProps.current?.movable?.color).toBe('white')
+
+    act(() => boardProps.current!.movable!.onMove('g1', 'f3'))
+    expect(await within(quiz).findByText('정답이에요! 1수 중 1수를 한 번에 맞혔어요.')).toBeInTheDocument()
+    await waitFor(async () => expect((await store.quiz.list('classic/opera-game'))[0]).toMatchObject({ sceneId: 's1', solvedSteps: 1, totalSteps: 1 }))
+
+    fireEvent.click(within(quiz).getByRole('button', { name: '이어서 보기' }))
+    expect(await screen.findByText('2. Nf3')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '다음 수' })).not.toBeDisabled()
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    expect(await screen.findByRole('button', { name: '퀴즈 다시 풀기' })).toBeInTheDocument()
+  })
+
+  it('퀴즈: 그만두면 그 자리로 돌아오고 결과를 남기지 않는다', async () => {
+    const { store } = renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
+    await screen.findByRole('region', { name: '이번 수 판정' })
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.click(await screen.findByRole('button', { name: '이 장면 퀴즈 풀기' }, { timeout: 3000 }))
+    fireEvent.click(within(screen.getByRole('region', { name: '퀴즈' })).getByRole('button', { name: '그만두기' }))
+    expect(screen.queryByRole('region', { name: '퀴즈' })).toBeNull()
+    expect(screen.getByText('1... e5')).toBeInTheDocument()
+    expect(await store.quiz.list('classic/opera-game')).toEqual([])
+  })
+
+  it('해설이 없는 경기는 리뷰 뒤 생성 코멘트를 보여 준다', async () => {
+    renderRoute('/game/classic/immortal-game', { engines: { analysis: analysisEngine() } })
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    fireEvent.click(within(card).getByRole('button', { name: '리뷰 실행' }))
+    await screen.findByText(/백 정확도/)
+    fireEvent.keyDown(window, { key: 'Home' })
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(within(card).getByText(/중앙|공간|가운데/)).toBeInTheDocument() // 1. e4
   })
 
   it('접이식 버튼에 포커스가 있어도 화살표 키로 이동한다', async () => {

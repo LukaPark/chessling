@@ -9,6 +9,17 @@ export interface ReviewRecord {
   createdAt: number
 }
 
+export interface QuizResult {
+  /** `${gameKey}|${sceneId}` */
+  key: string
+  gameKey: string
+  sceneId: string
+  solvedSteps: number
+  totalSteps: number
+  attempts: number
+  completedAt: number
+}
+
 export interface Store {
   readonly persistent: boolean
   forks: {
@@ -22,15 +33,21 @@ export interface Store {
     get(key: string): Promise<ReviewRecord | undefined>
     put(record: ReviewRecord): Promise<void>
   }
+  quiz: {
+    list(gameKey: string): Promise<QuizResult[]>
+    put(result: QuizResult): Promise<void>
+  }
 }
 
 class ChesslingDb extends Dexie {
   forks!: EntityTable<ForkRecord, 'id'>
   reviews!: EntityTable<ReviewRecord, 'key'>
+  quizResults!: EntityTable<QuizResult, 'key'>
 
   constructor(name: string) {
     super(name)
     this.version(1).stores({ forks: 'id, updatedAt', reviews: 'key' })
+    this.version(2).stores({ forks: 'id, updatedAt', reviews: 'key', quizResults: 'key, gameKey' })
   }
 }
 
@@ -53,12 +70,19 @@ export async function openDexieStore(name = 'chessling'): Promise<Store> {
         await db.reviews.put(record)
       },
     },
+    quiz: {
+      list: (gameKey) => db.quizResults.where('gameKey').equals(gameKey).toArray(),
+      put: async (result) => {
+        await db.quizResults.put(result)
+      },
+    },
   }
 }
 
 export function createMemoryStore(): Store {
   const forks = new Map<string, ForkRecord>()
   const reviews = new Map<string, ReviewRecord>()
+  const quiz = new Map<string, QuizResult>()
   return {
     persistent: false,
     forks: {
@@ -75,6 +99,12 @@ export function createMemoryStore(): Store {
       get: async (key) => clone(reviews.get(key)),
       put: async (record) => {
         reviews.set(record.key, structuredClone(record))
+      },
+    },
+    quiz: {
+      list: async (gameKey) => [...quiz.values()].filter((r) => r.gameKey === gameKey).map((r) => structuredClone(r)),
+      put: async (result) => {
+        quiz.set(result.key, structuredClone(result))
       },
     },
   }

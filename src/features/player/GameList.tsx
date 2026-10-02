@@ -25,7 +25,7 @@ export function GameList({ games, username }: { games: GameSummary[]; username?:
       {games.map((g) => (
         <li key={refKey(g.ref)}>
           {g.variant === 'standard' ? (
-            <Link to={refToPath(g.ref)} className={l.row}>
+            <Link to={refToPath(g.ref)} state={username ? { me: username } : undefined} className={l.row}>
               <Row g={g} username={username} />
             </Link>
           ) : (

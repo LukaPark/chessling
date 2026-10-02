@@ -1,9 +1,19 @@
 import { assignInlineVars } from '@vanilla-extract/dynamic'
 import type { Color } from '../chess/types'
 import { formatScore, winPercent, type Score } from '../engine/classify'
+import { cx } from '../ui/cx'
 import * as s from './evalBar.css'
 
-export function EvalBar({ score, orientation }: { score: Score | null; orientation: Color }) {
+/** hidden: 자리만 차지하고 값은 보이지 않는다(퀴즈 중) */
+export function EvalBar({ score, orientation, hidden = false }: { score: Score | null; orientation: Color; hidden?: boolean }) {
+  if (hidden) {
+    return (
+      <div className={cx(s.root, s.concealed)} data-orientation={orientation} data-hidden="" aria-hidden="true">
+        <div className={s.track} />
+        <span className={s.label} />
+      </div>
+    )
+  }
   const white = score ? winPercent(score) : 50
   const text = score ? formatScore(score) : '…'
   return (

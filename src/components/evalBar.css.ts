@@ -10,6 +10,8 @@ export const root = style({
   gap: space[3],
   '@media': { [mq.md]: { flexDirection: 'column-reverse', height: '100%', gap: space[2] } },
 })
+/** 자리만 남기고 보이지 않게 한다(퀴즈 중). 빈 막대는 흑 쪽 색만 보여 "흑 압승"처럼 읽힌다 */
+export const concealed = style({ visibility: 'hidden' })
 export const track = style({
   display: 'flex',
   flex: 1,
