@@ -344,7 +344,7 @@
     },
     "Italian Game: Evans Gambit Accepted": {
       "name": "에반스 갬빗 수락",
-      "summary": "흑이 폰을 받으면 백은 c3로 비숍을 쫓아 시간을 벌고 d4로 중앙을 차지해요. 흑은 퀸을 바꿔 공격의 힘을 빼는 방어로 맞설 수 있어요.",
+      "summary": "흑이 폰을 받으면 백은 c3로 비숍을 쫓아 시간을 벌고 d4로 중앙을 차지해요. 이 수순에서는 백이 9.Qxd8+로 퀸을 바꾸고 10.Nxe5로 폰을 되찾아요.",
       "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. d4 d6 7. O-O Bb6 8. dxe5 dxe5 9. Qxd8+ Nxd8 10. Nxe5 Be6"
     },
     "Italian Game: Giuoco Pianissimo": {
@@ -819,7 +819,7 @@
     },
     "Vienna Game: Vienna Gambit": {
       "name": "비엔나 갬빗",
-      "summary": "3.f4는 f폰으로 e5를 치는 갬빗이지만, 흑은 3...d5로 폰을 받지 않고 맞서요. 4.fxe5 Nxe4로 양쪽 e폰이 사라지고, 브레이어 변화에서는 7...f5가 e4 나이트를 받쳐요.",
+      "summary": "흑은 3.f4 갬빗을 받지 않고 3...d5로 맞서, 4.fxe5 Nxe4로 원래의 e폰이 둘 다 사라져요. 브레이어 변화에서는 7...f5가 e4 나이트를 받쳐요.",
       "line": "1. e4 e5 2. Nc3 Nf6 3. f4 d5 4. fxe5 Nxe4 5. Nf3 Be7 6. d4 O-O 7. Bd3 f5 8. exf6 Bxf6 9. O-O Nc6"
     },
     "Vienna Game: Falkbeer Variation": {
@@ -854,7 +854,7 @@
     },
     "King's Gambit Accepted: Kieseritzky Gambit": {
       "name": "키제리츠키 갬빗",
-      "summary": "5.Ne5는 g4 폰을 노리고, 흑은 5...Nf6(베를린 디펜스)로 e4를 맞받아쳐요. 6.d4 루빈시테인 변화로 백은 f4를 되찾지만 e4를 내줘 여전히 폰 하나가 모자라요.",
+      "summary": "5.Ne5는 g4 폰을 노리고, 흑은 5...Nf6(베를린 디펜스)로 e4를 맞받아쳐요. 6.d4 루빈스타인 변화로 백은 f4를 되찾지만 e4를 내줘 여전히 폰 하나가 모자라요.",
       "line": "1. e4 e5 2. f4 exf4 3. Nf3 g5 4. h4 g4 5. Ne5 Nf6 6. d4 d6 7. Nd3 Nxe4 8. Bxf4 Bg7 9. c3 Qe7 10. Qe2 Bf5"
     },
     "King's Gambit Declined: Falkbeer Countergambit": {
@@ -1034,7 +1034,7 @@
     },
     "Modern Defense: Averbakh System": {
       "name": "아베르바흐 시스템",
-      "summary": "백이 c4·d4·e4로 중앙을 넓게 차지한 체계예요. 흑은 ...Nge7로 f폰 길을 비워 두었다가 9...f5로 e4 폰을 공격해요.",
+      "summary": "백이 c4·e4 폰과 d4 나이트로 중앙을 넓게 차지한 체계예요. 흑은 나이트를 f6 대신 e7에 두어 f폰을 밀 수 있게 하고, 9...f5로 e4 폰을 쳐요.",
       "line": "1. d4 g6 2. c4 Bg7 3. Nc3 d6 4. e4 e5 5. Nf3 exd4 6. Nxd4 Nc6 7. Be3 Nge7 8. Be2 O-O 9. O-O f5"
     },
     "Modern Defense: Three Pawns Attack": {
