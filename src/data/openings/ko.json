@@ -484,18 +484,18 @@
     },
     "Nimzo-Indian Defense: Sämisch Variation": {
       "name": "제미슈 변화",
-      "summary": "4.a3 Bxc3+ 5.bxc3로 백은 비숍 쌍을 얻는 대신 c3·c4 폰이 겹쳐요. 7.cxd5 exd5로 겹침이 풀리고, 8.Bb5+ Nc6로 나이트가 e8 킹 앞에 묶여요.",
-      "line": "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. a3 Bxc3+ 5. bxc3 c5 6. e3 d5 7. cxd5 exd5 8. Bb5+ Nc6"
+      "summary": "4.a3 Bxc3+ 5.bxc3로 백은 비숍 쌍을 얻는 대신 c3·c4 폰이 겹쳐요. 흑은 ...c5와 ...Nc6에 이어 8...b6로 ...Ba6 길을 열어 c4를 노려요.",
+      "line": "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. a3 Bxc3+ 5. bxc3 c5 6. e3 Nc6 7. Bd3 O-O 8. Ne2 b6"
     },
     "Nimzo-Indian Defense: Leningrad Variation": {
       "name": "레닌그라드 변화",
-      "summary": "f6 나이트가 Bg5에 묶여 d8 퀸 앞을 떠나기 어려워요. 흑은 6...Qa5와 7...Ne4로 이미 묶인 c3 나이트에 압박을 쌓아요.",
-      "line": "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Bg5 h6 5. Bh4 c5 6. e3 Qa5 7. Ne2 Ne4 8. Qc2 cxd4"
+      "summary": "f6 나이트가 Bg5에 묶여 d8 퀸 앞을 떠나기 어려워요. 6.d5 d6의 베노니 디펜스 갈래에서 흑은 c5·d6·e5 폰을 검은 칸에 늘어놓아요.",
+      "line": "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Bg5 h6 5. Bh4 c5 6. d5 d6 7. e3 Bxc3+ 8. bxc3 e5"
     },
     "Queen's Indian Defense: Anti-Queen's Indian System": {
       "name": "안티 퀸스 인디언 시스템",
-      "summary": "캐슬링보다 6.Nc3를 먼저 둬 e4 칸을 직접 다퉈요. 7.d5가 b7 비숍의 대각선을 막자 흑은 ...Bb4와 8...Bxc3로 그 나이트를 없애요.",
-      "line": "1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 Bb7 5. Bg2 Be7 6. Nc3 O-O 7. d5 Bb4 8. Bd2 Bxc3"
+      "summary": "캐슬링보다 6.Nc3를 먼저 둬 e4 칸을 직접 다퉈요. 6...Ne4 7.Qc2 뒤 흑 나이트가 c3를 잡으면 백은 퀸으로 되잡아요.",
+      "line": "1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 Bb7 5. Bg2 Be7 6. Nc3 Ne4 7. Qc2 Nxc3 8. Qxc3 O-O"
     },
     "Queen's Indian Defense: Classical Variation": {
       "name": "클래식 변화",
@@ -509,13 +509,13 @@
     },
     "Queen's Indian Defense: Traditional Variation": {
       "name": "전통 변화",
-      "summary": "5...Be7까지가 이 변화의 자리예요. 6.d5는 c4가 받치는 폰으로 b7 비숍의 길을 막고, 흑은 6...Bb4+로 비숍을 바꿔 맞서요.",
-      "line": "1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 Bb7 5. Bg2 Be7 6. d5 Bb4+ 7. Bd2 Bxd2+ 8. Nfxd2 a5"
+      "summary": "5...Be7까지가 이 변화의 자리예요. 크람니크 변화에서는 7.Re1로 e폰 뒤에 룩을 세워 e4 전진에 대비해요.",
+      "line": "1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 Bb7 5. Bg2 Be7 6. O-O O-O 7. Re1 d5 8. cxd5 exd5"
     },
     "Queen's Indian Defense: Petrosian Variation": {
       "name": "페트로시안 변화",
-      "summary": "4.a3가 b4 칸을 막아 두어 Nc3가 비숍에 묶이지 않아요. 4...Ba6로 c4를 치면 5.Qc2가 지키고, 폰 교환 뒤 비숍은 b7로 돌아가요.",
-      "line": "1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. a3 Ba6 5. Qc2 d5 6. cxd5 exd5 7. Nc3 Bb7 8. Bf4 a6"
+      "summary": "4.a3가 b4 칸을 막아 두어 Nc3가 비숍에 묶이지 않아요. 카스파로프 어택에서는 7.Qc2가 e4 칸을 지켜 9.e4로 중앙을 넓혀요.",
+      "line": "1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. a3 Bb7 5. Nc3 d5 6. cxd5 Nxd5 7. Qc2 Nxc3 8. bxc3 Be7 9. e4 O-O 10. Bd3 c5 11. O-O cxd4 12. cxd4 Nc6"
     },
     "English Opening: Agincourt Defense": {
       "name": "아쟁쿠르 디펜스",
@@ -524,8 +524,8 @@
     },
     "English Opening: Anglo-Indian Defense": {
       "name": "앵글로 인디언 디펜스",
-      "summary": "1...Nf6는 구조를 정하지 않은 채 e4 칸부터 지켜요. 3...d5 4.cxd5 Nxd5 뒤에는 g2 비숍과 c3 나이트가 d5 나이트를 함께 쳐요.",
-      "line": "1. c4 Nf6 2. g3 e5 3. Bg2 d5 4. cxd5 Nxd5 5. Nc3 Nb6 6. Nf3 Bd6 7. d4 exd4 8. Nxd4 Be5"
+      "summary": "1...Nf6는 구조를 정하지 않은 채 e4 칸부터 지켜요. ...e5, ...d5, ...Nc6까지 두면 킹스 잉글리시 포 나이츠의 피앙케토 라인과 같은 자리예요.",
+      "line": "1. c4 Nf6 2. g3 e5 3. Bg2 d5 4. cxd5 Nxd5 5. Nc3 Nb6 6. Nf3 Nc6 7. O-O Be7 8. d3 O-O"
     },
     "English Opening: Carls-Bremen System": {
       "name": "칼스-브레멘 시스템",
@@ -534,13 +534,13 @@
     },
     "English Opening: King's English Variation": {
       "name": "킹스 잉글리시 변화",
-      "summary": "흑은 1...e5로 킹 쪽 폰부터 내밀어 d4 칸을 다퉈요. 3...f5와 4...e4로 f3 나이트를 쫓으면 백 나이트는 g5를 거쳐 h3로 가요.",
-      "line": "1. c4 e5 2. Nc3 d6 3. Nf3 f5 4. d4 e4 5. Ng5 c6 6. Nh3 Nf6 7. Bg5 h6 8. Bxf6 Qxf6"
+      "summary": "흑은 1...e5로 킹 쪽 폰부터 내밀어 d4 칸을 다퉈요. 4...e4가 f3 나이트를 d4로 쫓고, 흑은 ...c6와 ...d5로 폰 중앙을 만들어요.",
+      "line": "1. c4 e5 2. g3 Nf6 3. Bg2 c6 4. Nf3 e4 5. Nd4 d5 6. cxd5 cxd5 7. d3 Nc6 8. Nxc6 bxc6"
     },
     "English Opening: Neo-Catalan": {
       "name": "네오 카탈란",
-      "summary": "d4를 두지 않은 채 3.g3와 4.Bg2로 카탈란처럼 비숍을 세워요. 4...d4로 흑이 공간을 잡으면 백은 6.d3와 7.e3로 그 폰을 건드려요.",
-      "line": "1. c4 e6 2. Nf3 d5 3. g3 Nf6 4. Bg2 d4 5. O-O c5 6. d3 h6 7. e3 Nc6 8. Na3 e5"
+      "summary": "d4를 두지 않은 채 3.g3와 4.Bg2로 카탈란처럼 비숍을 세워요. 4...Be7로 차분히 받는 네오 카탈란 거절에서 백은 b3와 Bb2로 다른 비숍도 꺼내요.",
+      "line": "1. c4 e6 2. Nf3 d5 3. g3 Nf6 4. Bg2 Be7 5. O-O O-O 6. b3 c5 7. Bb2 Nc6 8. e3 b6"
     },
     "English Opening: Symmetrical Variation": {
       "name": "대칭 변화",
@@ -554,8 +554,8 @@
     },
     "Scandinavian Defense: Main Line": {
       "name": "메인 라인",
-      "summary": "d5 퀸이 3.Nc3에 쫓겨 3...Qa5로 비켜나요. 흑은 ...c6와 ...Bf5로 진형을 짜지만, 7.Nc4가 퀸을 한 번 더 쳐서 d8로 돌려보내요.",
-      "line": "1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 4. Nf3 c6 5. d4 Bf5 6. Ne5 Nd7 7. Nc4 Qd8 8. h4 h5"
+      "summary": "d5 퀸이 3.Nc3에 쫓겨 3...Qa5로 비켜나요. 흑은 ...c6, ...Bf5, ...e6 순으로 비숍부터 꺼내고, 8...Bb4로 c3 나이트를 겨눠요.",
+      "line": "1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 4. d4 c6 5. Nf3 Bf5 6. Bc4 e6 7. Bd2 Nf6 8. Qe2 Bb4"
     },
     "Scandinavian Defense: Modern Variation": {
       "name": "모던 변화",
@@ -574,8 +574,8 @@
     },
     "Pirc Defense: Classical Variation": {
       "name": "클래식 변화",
-      "summary": "4.Nf3로 백은 무리하지 않고 기물부터 꺼내요. 5.Be3와 6.Qd2에 흑이 6...d5로 맞서면 7.e5가 f6 나이트를 e4로 몰아내요.",
-      "line": "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Nf3 Bg7 5. Be3 O-O 6. Qd2 d5 7. e5 Ne4 8. Nxe4 dxe4"
+      "summary": "4.Nf3로 백은 무리하지 않고 기물 전개부터 해요. 5.Be3와 6.Qd2에 흑이 6...c5로 d4를 치면, 백은 8.Bh6로 g7 비숍을 바꾸려 해요.",
+      "line": "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Nf3 Bg7 5. Be3 O-O 6. Qd2 c5 7. dxc5 dxc5 8. Bh6 Nc6"
     },
     "Pirc Defense: 150 Attack": {
       "name": "150 어택",
@@ -624,7 +624,7 @@
     },
     "Petrov's Defense: Classical Attack": {
       "name": "클래식 어택",
-      "summary": "5.d4 d5 6.Bd3로 백은 e4 나이트를 겨눠요. 흑은 ...Be7, ...Nc6 뒤 8...Bf5로 그 나이트를 한 번 더 받쳐요.",
+      "summary": "5.d4 d5 6.Bd3로 백은 e4 나이트에 압박을 걸어요. 흑은 ...Be7, ...Nc6 뒤 8...Bf5로 그 나이트를 한 번 더 지켜요.",
       "line": "1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nf3 Nxe4 5. d4 d5 6. Bd3 Be7 7. O-O Nc6 8. Nc3 Bf5"
     },
     "Petrov's Defense: Three Knights Game": {
@@ -654,12 +654,12 @@
     },
     "Philidor Defense: Philidor Countergambit": {
       "name": "필리도르 카운터갬빗",
-      "summary": "3...f5는 e4를 맞받아쳐 f줄을 열려는 맞불 수예요. 4.Bc4 뒤 백은 e4 폰을 내주고 캐슬링을 서두르며, 8...Rxg8로 흑은 킹 쪽 캐슬링을 잃어요.",
-      "line": "1. e4 e5 2. Nf3 d6 3. d4 f5 4. Bc4 exd4 5. Nxd4 fxe4 6. O-O Nc6 7. Nc3 Ne5 8. Bxg8 Rxg8"
+      "summary": "3...f5로 e4를 맞받아치면 델 리오 어택에서 7.Nf7이 퀸과 h8 룩을 함께 쳐요. 흑은 h8 룩을 내주는 대신 그 나이트를 h8에 가두고 ...O-O-O로 전개를 마쳐요.",
+      "line": "1. e4 e5 2. Nf3 d6 3. d4 f5 4. dxe5 fxe4 5. Ng5 d5 6. e6 Nf6 7. Nf7 Qe7 8. Nxh8 Bxe6 9. Nc3 Nc6 10. Bb5 O-O-O"
     },
     "Vienna Game: Vienna Gambit": {
       "name": "비엔나 갬빗",
-      "summary": "3.f4는 e5 폰과 f폰을 맞바꿔 f줄을 열려는 갬빗이에요. 브레이어 변화에서는 7...f5가 e4 나이트를 받치고, 8.exf6 Bxf6로 f줄이 열려요.",
+      "summary": "3.f4는 f폰으로 e5를 치는 갬빗이지만, 흑은 3...d5로 폰을 받지 않고 맞서요. 4.fxe5 Nxe4로 양쪽 e폰이 사라지고, 브레이어 변화에서는 7...f5가 e4 나이트를 받쳐요.",
       "line": "1. e4 e5 2. Nc3 Nf6 3. f4 d5 4. fxe5 Nxe4 5. Nf3 Be7 6. d4 O-O 7. Bd3 f5 8. exf6 Bxf6 9. O-O Nc6"
     },
     "Vienna Game: Falkbeer Variation": {
