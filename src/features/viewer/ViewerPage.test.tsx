@@ -9,6 +9,13 @@ import { boardProps } from '../../test/boardMock'
 import { renderRoute } from '../../test/renderRoute'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
+// 색인은 ?url 에셋을 fetch로 받는데, jsdom에는 그 에셋이 없다. 실제 JSON을 바로 넘긴다.
+vi.mock('../../sources/openings', () => ({
+  loadOpeningData: async () => ({
+    index: (await import('../../data/openings/index.json')).default,
+    ko: (await import('../../data/openings/ko.json')).default,
+  }),
+}))
 vi.mock('../../sources/annotations', () => ({
   annotationSlugs: () => ['opera-game'],
   loadAnnotations: async (slug: string) =>
