@@ -34,6 +34,7 @@ describe('validateKoOpenings', () => {
     const k = base()
     k.families['Sicilian Defense'].idea = '엔진이 좋아하는 오프닝이에요.'
     k.families['Philidor Defense'].plans.white = '첫 문장이에요. 둘째 문장이에요.'
+    for (const v of Object.keys(k.variations)) if (v.startsWith('Philidor Defense:')) delete k.variations[v]
     k.variations['Sicilian Defense: Najdorf Variation'].summary =
       '이 문장은 일부러 아주 길게 써서 한 문장 길이 제한을 넘기도록 만든 시험용 문장이고 끝까지 마침표 없이 이어져요.'
     const errors = validateKoOpenings(k, INDEX)
