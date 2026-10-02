@@ -26,14 +26,14 @@ export type Fact =
   | { kind: 'castle'; long: boolean }
   | { kind: 'develop'; piece: PieceSymbol }
   | { kind: 'centerPawn'; square: Square }
-  | { kind: 'fork'; piece: PieceSymbol; square: Square; targets: PieceSymbol[] }
-  | { kind: 'pin'; pinned: PieceSymbol; square: Square; behind: PieceSymbol }
+  | { kind: 'fork'; piece: PieceSymbol; square: Square; targets: PieceSymbol[]; targetSquares?: Square[] }
+  | { kind: 'pin'; pinned: PieceSymbol; square: Square; behind: PieceSymbol; from?: Square }
   | { kind: 'hanging'; piece: PieceSymbol; square: Square }
   | { kind: 'rookFile'; file: string; open: boolean }
   | { kind: 'kingShield' }
   | { kind: 'trade'; piece: PieceSymbol }
-  | { kind: 'missed'; bestSan: string; gain: 'mate' | 'material' | 'advantage'; amount: number }
-  | { kind: 'refutation'; target: PieceSymbol; square: Square; san: string | null }
+  | { kind: 'missed'; bestSan: string; gain: 'mate' | 'material' | 'advantage'; amount: number; uci?: string }
+  | { kind: 'refutation'; target: PieceSymbol; square: Square; san: string | null; uci?: string }
   | { kind: 'mateThreat'; forWhite: boolean; inMoves: number }
   | { kind: 'band'; from: Band; to: Band }
 
@@ -108,13 +108,17 @@ export function extractFacts(input: CommentInput): Fact[] {
 
   // 포크: 움직인 기물이 상대 기물 2개 이상을 공격(킹이거나, 더 비싸거나, 방어가 없음)
   const targets: PieceSymbol[] = []
+  const targetSquares: Square[] = []
   for (const sq of attackedBy(after, move.to)) {
     const t = after.get(sq)
     if (!t || t.color !== enemy) continue
     const undefended = after.attackers(sq, enemy).length === 0
-    if (t.type === 'k' || PIECE_VALUE[t.type] > PIECE_VALUE[move.piece] || undefended) targets.push(t.type)
+    if (t.type === 'k' || PIECE_VALUE[t.type] > PIECE_VALUE[move.piece] || undefended) {
+      targets.push(t.type)
+      targetSquares.push(sq)
+    }
   }
-  if (targets.length >= 2 && !isHanging(after, move.to)) facts.push({ kind: 'fork', piece: move.piece, square: move.to, targets })
+  if (targets.length >= 2 && !isHanging(after, move.to)) facts.push({ kind: 'fork', piece: move.piece, square: move.to, targets, targetSquares })
 
   const pin = findPin(after, move.to)
   if (pin) facts.push(pin)
@@ -153,7 +157,7 @@ export function extractFacts(input: CommentInput): Fact[] {
 }
 
 /** sq의 기물이 공격하는 칸들 */
-function attackedBy(chess: Chess, sq: Square): Square[] {
+export function attackedBy(chess: Chess, sq: Square): Square[] {
   const piece = chess.get(sq)
   if (!piece) return []
   const out: Square[] = []
@@ -188,7 +192,7 @@ function findPin(chess: Chess, from: Square): Fact | null {
         if (!first) first = { sq, type: t.type }
         else {
           if ((t.type === 'k' || t.type === 'q') && PIECE_VALUE[first.type] < PIECE_VALUE[t.type] + (t.type === 'k' ? 100 : 0)) {
-            return { kind: 'pin', pinned: first.type, square: first.sq, behind: t.type }
+            return { kind: 'pin', pinned: first.type, square: first.sq, behind: t.type, from }
           }
           break
         }
@@ -224,11 +228,11 @@ function kingShieldFiles(chess: Chess, color: 'w' | 'b'): string[] {
 function describeMissed(fenBefore: string, before: ReviewedPosition): Fact | null {
   const bestSan = pvToSan(fenBefore, [before.best!], 1)[0]
   if (!bestSan) return null
-  if ('mate' in before.score) return { kind: 'missed', bestSan, gain: 'mate', amount: Math.abs(before.score.mate) }
+  if ('mate' in before.score) return { kind: 'missed', bestSan, gain: 'mate', amount: Math.abs(before.score.mate), uci: before.best! }
   const c = new Chess(fenBefore)
   const m = c.move({ from: before.best!.slice(0, 2), to: before.best!.slice(2, 4), promotion: before.best![4] })
-  if (m.captured) return { kind: 'missed', bestSan, gain: 'material', amount: PIECE_VALUE[m.captured] }
-  return { kind: 'missed', bestSan, gain: 'advantage', amount: 0 }
+  if (m.captured) return { kind: 'missed', bestSan, gain: 'material', amount: PIECE_VALUE[m.captured], uci: before.best! }
+  return { kind: 'missed', bestSan, gain: 'advantage', amount: 0, uci: before.best! }
 }
 
 /** 상대의 최선 응수가 무엇을 따는지. 실제 다음 기보 수와 같으면 SAN을 숨긴다 */
@@ -241,5 +245,5 @@ function describeRefutation(fenAfter: string, replyUci: string, nextGameUci: str
     return null
   }
   if (!m.captured || PIECE_VALUE[m.captured] < 3) return null
-  return { kind: 'refutation', target: m.captured, square: m.to, san: replyUci === nextGameUci ? null : m.san }
+  return { kind: 'refutation', target: m.captured, square: m.to, san: replyUci === nextGameUci ? null : m.san, uci: replyUci }
 }
