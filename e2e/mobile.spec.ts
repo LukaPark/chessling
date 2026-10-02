@@ -27,9 +27,27 @@ test('모바일 뷰어: 리뷰 후 마지막 수에 판정이 붙는다', async 
   const card = page.locator('section[aria-label="이번 수 판정"]')
   await card.getByRole('button', { name: '리뷰 실행' }).click()
   await expect(page.getByText(/백 정확도/)).toBeVisible({ timeout: 90_000 })
-  await page.getByRole('group', { name: '수 이동' }).getByRole('button', { name: '마지막' }).click()
+  // 리뷰는 진행 중인 수를 따라가므로 끝나면 이미 마지막 수일 수 있다(그때 '마지막' 버튼은 비활성)
+  await page.keyboard.press('End')
   await expect(card).toContainText('17. Rd8#')
   await expect(card).toContainText(/탁월|좋은 수|최선|우수/)
+})
+
+test('모바일 뷰어: 핵심 장면 해설은 접혀 있고 [더 보기]로 편다', async ({ page }) => {
+  await page.goto('/game/classic/opera-game')
+  const bar = page.getByRole('group', { name: '수 이동' })
+  for (let i = 0; i < 13; i++) await bar.getByRole('button', { name: '다음 수' }).click() // 7. Qb3(핵심 장면)
+  const card = page.locator('section[aria-label="이번 수 판정"]')
+  await expect(card).toContainText('핵심 장면')
+  const more = card.getByRole('button', { name: '더 보기' })
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  const box = await more.boundingBox()
+  expect(box!.height).toBeGreaterThanOrEqual(44)
+  expect(box!.width).toBeGreaterThanOrEqual(44)
+  await more.click()
+  await expect(card.getByRole('button', { name: '접기' })).toHaveAttribute('aria-expanded', 'true')
+  const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }))
+  expect(m.sw).toBeLessThanOrEqual(m.cw)
 })
 
 test('다크 모드 선택이 새로고침 뒤에도 유지된다', async ({ page }) => {

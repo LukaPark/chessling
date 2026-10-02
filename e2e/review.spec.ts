@@ -24,4 +24,8 @@ test('Lichess 대국을 불러와 전체 리뷰한다', async ({ page }) => {
   await expect(page.getByText(/백 정확도/)).toBeVisible({ timeout: 60_000 })
   await expect(page.getByRole('img', { name: '평가 그래프' })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Nf6/ })).toHaveAttribute('data-label', 'blunder')
+
+  // 내 대국은 리뷰 결과로 수마다 코멘트를 만든다
+  await page.getByRole('button', { name: /^Qxf7#/ }).click()
+  await expect(page.locator('section[aria-label="이번 수 판정"]')).toContainText('체크메이트')
 })
