@@ -25,6 +25,7 @@ import type { Ply } from '../../chess/types'
 import { Banner } from '../../components/Banner'
 import { Board } from '../../components/Board'
 import { MoveList } from '../../components/MoveList'
+import { epdOf } from '../../openings/line'
 import * as g from '../../styles/features/gameLayout.css'
 import * as s from '../../styles/features/play.css'
 import { spin } from '../../ui/button.css'
@@ -148,11 +149,14 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
         <Disclosure title="기보" testId="play-moves">
           <MoveList plies={plies} current={plies.length - 1} />
         </Disclosure>
-        {original.data && (
-          <Disclosure title="원래 대국의 수순">
-            <OriginalLine plies={original.data.plies} fromPly={fork.originPly} />
-          </Disclosure>
-        )}
+        {original.data &&
+          (startsFromOriginal(original.data.plies, fork) ? (
+            <Disclosure title="원래 대국의 수순">
+              <OriginalLine plies={original.data.plies} fromPly={fork.originPly} />
+            </Disclosure>
+          ) : (
+            <p className={g.note}>연습용 분기라 원래 대국 수순을 보여 주지 않아요.</p>
+          ))}
       </div>
 
       <ControlBar label="대국 조작" className={g.controls}>
@@ -212,6 +216,12 @@ function EloSheet({ value, onCommit }: { value: number; onCommit: (elo: number) 
   useEffect(() => latest.current.onCommit(settled), [settled])
   useEffect(() => () => latest.current.onCommit(latest.current.draft), [])
   return <EloSlider value={draft} onChange={setDraft} />
+}
+
+/** 오프닝 연습처럼 기보 밖 포지션에서 시작한 분기는 원래 대국의 이후 수순과 이어지지 않는다 */
+function startsFromOriginal(plies: Ply[], fork: ForkRecord): boolean {
+  const at = plies[fork.originPly]
+  return at !== undefined && epdOf(at.fen) === epdOf(fork.startFen)
 }
 
 function OriginalLine({ plies, fromPly }: { plies: Ply[]; fromPly: number }) {
