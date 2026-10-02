@@ -44,6 +44,13 @@ describe('cardOpening', () => {
     expect(cardOpening(track, plies, 10)).toMatchObject({ changed: true, summary: '변화 요약이에요.' })
   })
 
+  it('하위 변화가 같은 설명을 물려받으면 배지는 달되 설명은 되풀이하지 않는다', () => {
+    const p = pgnToPlies(`${NAJDORF} 6. Be3 *`)
+    const t = identifyOpening(p, DATA)!
+    expect(cardOpening(t, p, 10)).toMatchObject({ changed: true, summary: '변화 요약이에요.' })
+    expect(cardOpening(t, p, 11)).toMatchObject({ changed: true, summary: null })
+  })
+
   it('이탈 수에서 수 번호를 붙인 이론 수를 알려 준다', () => {
     expect(cardOpening(track, plies, 11)).toMatchObject({ changed: false, deviation: '이론대로라면 6.Be3' })
     expect(cardOpening(track, plies, 10)?.deviation).toBeNull()

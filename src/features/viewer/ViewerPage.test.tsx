@@ -46,6 +46,10 @@ describe('ViewerPage', () => {
     expect(await within(card).findByText(/필리도르 디펜스/, {}, { timeout: 3000 })).toBeInTheDocument()
     expect(within(card).getByText('오프닝')).toBeInTheDocument()
     expect(within(card).getByText(/e5 폰을 단단히 받치는/)).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // 3.d4: 아직 같은 필리도르 디펜스
+    await waitFor(() => expect(within(card).queryByText(/e5 폰을 단단히 받치는/)).toBeNull())
+    expect(within(card).getByText(/필리도르 디펜스/)).toBeInTheDocument()
+    expect(within(card).queryByText('오프닝')).toBeNull()
   })
 
   it('오프닝 섹션을 펼치면 계열 설명과 연습 버튼이 보인다', async () => {

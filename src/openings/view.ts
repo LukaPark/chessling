@@ -22,6 +22,13 @@ export interface CardOpening {
   deviation: string | null
 }
 
+/** 카드 설명이 어디서 오는지: 변화 키, 변화가 없으면 계열 */
+function summarySource(at: OpeningAt | null | undefined): string | null {
+  if (!at) return null
+  if (at.variationKey) return `v:${at.variationKey}`
+  return at.family ? `f:${at.entry.name.split(':')[0]}` : null
+}
+
 export function cardOpening(track: OpeningTrack, plies: Ply[], ply: number): CardOpening | null {
   const at = track.byPly[ply]
   if (!at) return null
@@ -36,7 +43,11 @@ export function cardOpening(track: OpeningTrack, plies: Ply[], ply: number): Car
   return {
     label: openingLabel(at),
     changed,
-    summary: changed ? (at.variation?.summary ?? at.family?.idea ?? null) : null,
+    // 하위 변화가 같은 설명을 물려받으면 되풀이하지 않는다
+    summary:
+      changed && summarySource(at) !== summarySource(track.byPly[ply - 1])
+        ? (at.variation?.summary ?? at.family?.idea ?? null)
+        : null,
     deviation,
   }
 }
