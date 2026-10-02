@@ -71,6 +71,36 @@ describe('validateAnnotations', () => {
     a.scenes = [{ id: 's1', startPly: 2, side: 'b', prompt: '?', source: 'authored', steps: [{ answerUci: 'g1f3' }] }]
     expect(validateAnnotations(a, plies).some((e) => e.includes('둘 쪽이 맞지 않음'))).toBe(true)
   })
+
+  describe('가이드', () => {
+    const texts = ['시작이에요.', '백이 e4로 시작해요.', '흑도 e5로 받아요.', '백 나이트가 나와요.', '흑 나이트도 나와요.']
+    const withGuide = (ply: number, guide: string[]): Annotations => {
+      const a = base(texts)
+      a.plies[ply] = { ...a.plies[ply], guide }
+      return a
+    }
+    const guideErrors = (a: Annotations) => validateAnnotations(a, plies).filter((e) => e.includes('가이드'))
+
+    it('올바른 가이드는 통과한다', () => {
+      expect(guideErrors(withGuide(3, ['f3e5', 'e5', '?g1f3']))).toEqual([])
+      expect(guideErrors(withGuide(3, []))).toEqual([])
+    })
+    it('읽을 수 없거나, 출발 칸이 비었거나, 닿지 않으면 오류', () => {
+      expect(guideErrors(withGuide(3, ['zz']))[0]).toContain('읽을 수 없음')
+      expect(guideErrors(withGuide(3, ['d4d5']))[0]).toContain('출발 칸이 비어 있음')
+      expect(guideErrors(withGuide(3, ['f3e6']))[0]).toContain('닿지 않음')
+      expect(guideErrors(withGuide(3, ['?g1g3']))[0]).toContain('둘 수 없는 수')
+    })
+    it('4개 이상이거나 시작 포지션이면 오류', () => {
+      expect(guideErrors(withGuide(3, ['f3e5', 'e5', 'e4', 'f3d4'])).some((e) => e.includes('최대 3개'))).toBe(true)
+      expect(guideErrors(withGuide(0, ['e4']))[0]).toContain('시작 포지션')
+    })
+    it('퀴즈 장면 시작 포지션 가이드가 첫 정답을 보여 주면 오류', () => {
+      const a = withGuide(2, ['g1f3'])
+      a.scenes = [{ id: 's', startPly: 2, side: 'w', prompt: '둬 보세요.', source: 'authored', steps: [{ answerUci: 'g1f3' }] }]
+      expect(validateAnnotations(a, plies).some((e) => e.includes('장면 s') && e.includes('가이드'))).toBe(true)
+    })
+  })
 })
 
 it('해설에서 엔진을 직접 말하지 않는다', () => {
