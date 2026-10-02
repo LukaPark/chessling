@@ -10,18 +10,235 @@
     },
     "Sicilian Defense": {
       "name": "시실리안 디펜스",
-      "idea": "흑이 1...c5로 d4 칸을 다투는 오프닝이에요. 양쪽 진형이 비대칭이 되어 싸움이 날카로워져요.",
+      "idea": "흑이 1...c5로 중앙 d4 칸을 옆에서 다퉈요. 진형이 비대칭이라 양쪽이 서로 다른 날개에서 공격해요.",
       "plans": {
-        "white": "d4로 c폰과 바꾼 뒤 빠른 전개로 킹 쪽 공격을 노려요.",
-        "black": "열린 c줄과 퀸 쪽 폰 다수를 살려 반격해요."
+        "white": "d4로 c폰과 바꾼 뒤 f4나 g4 같은 폰 전진으로 킹 쪽을 몰아붙여요.",
+        "black": "반쯤 열린 c줄과 ...b5 전진으로 퀸 쪽에서 맞불을 놓아요."
+      }
+    },
+    "Italian Game": {
+      "name": "이탈리안 게임",
+      "idea": "백이 3.Bc4로 비숍을 꺼내 흑의 약한 f7 칸을 겨눠요. 양쪽 모두 기물을 빨리 꺼내는 열린 싸움이 되기 쉬워요.",
+      "plans": {
+        "white": "c3로 d4 전진을 준비하거나, d3로 e4를 받쳐 두고 천천히 기물을 돌려요.",
+        "black": "...Bc5나 ...Nf6로 맞서 전개하고, 때가 되면 ...d5로 중앙을 열어요."
+      }
+    },
+    "Ruy Lopez": {
+      "name": "루이 로페스",
+      "idea": "백이 3.Bb5로 e5를 지키는 c6 나이트에 압력을 걸어요. 수십 수에 걸친 기동전이 이어지는 묵직한 오프닝이에요.",
+      "plans": {
+        "white": "c3와 d4로 중앙을 넓히고, h3로 ...Bg4를 막아 기물 자리를 지켜요.",
+        "black": "...a6과 ...b5로 비숍을 밀어내고, ...d6으로 e5 거점을 붙들어요."
+      }
+    },
+    "French Defense": {
+      "name": "프렌치 디펜스",
+      "idea": "흑이 1...e6과 2...d5로 백의 e4 폰에 곧장 맞서요. 진형은 단단하지만 c8 비숍이 e6 폰 뒤에 갇히기 쉬워요.",
+      "plans": {
+        "white": "e5로 폰 사슬을 세워 공간을 차지하고 킹 쪽 공격을 준비해요.",
+        "black": "...c5와 ...f6으로 백 폰 사슬의 밑동과 머리를 번갈아 흔들어요."
+      }
+    },
+    "Caro-Kann Defense": {
+      "name": "카로칸 디펜스",
+      "idea": "흑이 1...c6으로 ...d5를 받칠 폰을 먼저 세워요. 프렌치와 달리 c8 비숍이 ...e6보다 먼저 밖으로 나와요.",
+      "plans": {
+        "white": "앞선 공간과 전개 속도를 살려 e5 전진이나 빠른 공격으로 주도권을 잡아요.",
+        "black": "튼튼한 폰 구조를 지키며 ...c5나 ...e5로 중앙을 풀어 기물에 숨통을 틔워요."
       }
     }
   },
   "variations": {
     "Sicilian Defense: Najdorf Variation": {
       "name": "나이도르프 변화",
-      "summary": "흑이 5...a6으로 b5 칸을 막고, e5와 e6 중 하나를 고를 여지를 남겨요. 시실리안에서 가장 깊게 연구된 변화 중 하나예요.",
-      "line": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6"
+      "summary": "5...a6이 b5 칸을 막고, 흑은 ...e5와 ...e6 중 하나를 고를 여지를 남겨요. 6.Be3 뒤 f3과 g4로 미는 잉글리시 어택이 대표적이에요.",
+      "line": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e5 7. Nb3 Be6 8. f3 Be7 9. Qd2 O-O 10. O-O-O Nbd7 11. g4 b5 12. g5 b4"
+    },
+    "Italian Game: Giuoco Piano": {
+      "name": "주오코 피아노",
+      "summary": "양쪽 비숍이 c4와 c5에서 마주 서요. 백이 c3와 d4로 중앙을 열면 전개 속도를 다투는 싸움이 벌어져요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Bd2 Bxd2+ 8. Nbxd2 d5 9. exd5 Nxd5 10. Qb3 Nce7 11. O-O O-O 12. Rfe1 c6"
+    },
+    "Italian Game: Classical Variation": {
+      "name": "클래식 변화",
+      "summary": "백이 4.c3로 d4 전진을 예고해요. 요즘은 d3로 진형을 다진 뒤 나이트를 d2-f1-g3로 돌리는 운영이 흔해요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 d6 6. O-O a6 7. a4 Ba7 8. Re1 O-O 9. h3 h6 10. Nbd2 Re8 11. Nf1 Be6 12. Bxe6 Rxe6 13. Ng3 d5"
+    },
+    "Italian Game: Evans Gambit": {
+      "name": "에반스 갬빗",
+      "summary": "백이 4.b4로 폰을 내주고 c3와 d4로 중앙을 빨리 세우려 해요. 흑이 4...Bb6로 거절하면 a4-a5로 비숍을 몰아내요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bb6 5. a4 a6 6. Nc3 Nf6 7. Nd5 Nxd5 8. exd5 Nd4 9. a5 Ba7 10. d3 d6 11. Nxd4 Bxd4 12. c3 Ba7 13. O-O O-O"
+    },
+    "Italian Game: Evans Gambit Accepted": {
+      "name": "에반스 갬빗 수락",
+      "summary": "흑이 폰을 받으면 백은 c3로 비숍을 쫓아 시간을 벌고 d4로 중앙을 차지해요. 흑은 퀸을 바꿔 공격의 힘을 빼는 방어로 맞설 수 있어요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. d4 d6 7. O-O Bb6 8. dxe5 dxe5 9. Qxd8+ Nxd8 10. Nxe5 Be6"
+    },
+    "Italian Game: Giuoco Pianissimo": {
+      "name": "주오코 피아니시모",
+      "summary": "백이 4.d3로 e4를 받치고 아주 조용히 둬요. 6.Na4처럼 c5 비숍을 쫓아 비숍 쌍을 챙기는 작전도 있어요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 5. Nc3 d6 6. Na4 Bb6 7. c3 O-O 8. O-O h6 9. Nxb6 axb6 10. Re1 Re8 11. h3 Be6"
+    },
+    "Italian Game: Two Knights Defense": {
+      "name": "투 나이츠 디펜스",
+      "summary": "흑이 3...Nf6로 e4 폰을 공격하며 반격에 나서요. 4.Ng5로 f7을 몰아치면 흑은 폰을 내주고 빠른 전개로 버텨요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Be2 h6 9. Nf3 e4 10. Ne5 Bd6 11. d4 exd3 12. Nxd3 Qc7"
+    },
+    "Ruy Lopez: Morphy Defense": {
+      "name": "모피 디펜스",
+      "summary": "3...a6으로 b5 비숍부터 건드리는 수순이에요. 비숍이 a4로 물러나도 ...b5로 언제든 다시 밀어낼 여지가 남아요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Na5 10. Bc2 c5 11. d4 Qc7 12. Nbd2 cxd4 13. cxd4 Nc6"
+    },
+    "Ruy Lopez: Exchange Variation": {
+      "name": "교환 변화",
+      "summary": "백이 4.Bxc6으로 나이트를 잡아 흑의 c폰을 겹치게 해요. 흑은 비숍 쌍을 얻고, 백은 d4 교환 뒤 킹 쪽 폰이 하나 더 많아요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6 5. O-O f6 6. d4 exd4 7. Nxd4 c5 8. Nb3 Qxd1 9. Rxd1 Bg4 10. f3 Be6 11. Nc3 Bd6 12. Be3 b6 13. a4 O-O-O"
+    },
+    "Ruy Lopez: Closed": {
+      "name": "클로즈드 변화",
+      "summary": "흑이 5...Be7으로 차분히 전개하고 백은 6.Re1로 e4를 지켜요. c3와 d4, 나이트의 d2-f1-g3 이동으로 긴 기동전이 이어져요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Nb8 10. d4 Nbd7 11. Nbd2 Bb7 12. Bc2 Re8 13. Nf1 Bf8 14. Ng3 g6"
+    },
+    "Ruy Lopez: Marshall Attack": {
+      "name": "마셜 어택",
+      "summary": "흑이 8...d5로 폰을 내주고 백 킹 쪽에 기물을 몰아요. ...Bd6과 ...Qh4-h3이 이어지면 백은 정확히 막아야 해요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 9. exd5 Nxd5 10. Nxe5 Nxe5 11. Rxe5 c6 12. d4 Bd6 13. Re1 Qh4 14. g3 Qh3 15. Be3 Bg4 16. Qd3 Rae8"
+    },
+    "Ruy Lopez: Berlin Defense": {
+      "name": "베를린 디펜스",
+      "summary": "흑이 3...Nf6로 곧바로 e4 폰을 겨눠요. 퀸이 일찍 바뀌면 흑 킹은 캐슬링을 못 하지만 진형은 좀처럼 무너지지 않아요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 5. d4 Nd6 6. Bxc6 dxc6 7. dxe5 Nf5 8. Qxd8+ Kxd8 9. Nc3 Ke8 10. h3 h5"
+    },
+    "Ruy Lopez: Open": {
+      "name": "오픈 변화",
+      "summary": "흑이 5...Nxe4로 폰을 잡고 기물을 활발하게 써요. ...b5로 비숍을 밀어낸 뒤 ...d5로 e4 나이트를 받쳐요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 6. d4 b5 7. Bb3 d5 8. dxe5 Be6 9. c3 Bc5 10. Nbd2 O-O 11. Bc2 f5 12. Nb3 Bb6"
+    },
+    "Ruy Lopez: Steinitz Defense": {
+      "name": "슈타이니츠 디펜스",
+      "summary": "흑이 3...d6으로 e5를 곧장 받쳐요. 무너지지는 않지만 자리가 좁아 백의 d4 압박을 오래 견뎌야 해요.",
+      "line": "1. e4 e5 2. Nf3 Nc6 3. Bb5 d6 4. d4 Bd7 5. Nc3 Nf6 6. O-O Be7 7. Re1 exd4 8. Nxd4 O-O 9. Bxc6 bxc6 10. Bg5 h6 11. Bh4 Re8"
+    },
+    "Sicilian Defense: French Variation": {
+      "name": "프렌치 변화",
+      "summary": "2...e6은 d5 칸을 받쳐 두고 수를 아끼는 선택이에요. 이어서 ...a6, ...Nc6, ...d6 중 무엇을 둘지 상황에 맞춰 골라요.",
+      "line": "1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 5. Bd3 Nf6 6. O-O Qc7 7. Qe2 d6 8. c4 g6 9. Nc3 Bg7 10. Rd1 O-O"
+    },
+    "Sicilian Defense: Löwenthal Variation": {
+      "name": "뢰벤탈 변화",
+      "summary": "흑이 4...e5로 d4 나이트를 바로 쫓아내요. 6.Nd6+에 비숍을 내주는 대신 백 퀸을 끌어내 전개 시간을 벌어요.",
+      "line": "1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e5 5. Nb5 a6 6. Nd6+ Bxd6 7. Qxd6 Qf6 8. Qd1 Qg6 9. Nc3 Nge7 10. h4 h5"
+    },
+    "Sicilian Defense: Old Sicilian": {
+      "name": "올드 시실리안",
+      "summary": "흑이 2...Nc6으로 d4 칸에 기물을 하나 더 보태요. ...g6으로 비숍을 긴 대각선에 놓는 가속 드래곤으로도 이어져요.",
+      "line": "1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6 5. c4 Bg7 6. Be3 Nf6 7. Nc3 O-O 8. Be2 d6 9. O-O Bd7 10. Qd2 Nxd4 11. Bxd4 Bc6"
+    },
+    "Sicilian Defense: Open": {
+      "name": "오픈 시실리안",
+      "summary": "3.d4로 c폰과 바꾸면 중앙이 열려요. 백은 전개가 빠르고, 흑은 중앙 폰이 하나 더 많아요.",
+      "line": "1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 d6 6. Bg5 e6 7. Qd2 a6 8. O-O-O Bd7 9. f4 b5 10. Bxf6 gxf6"
+    },
+    "Sicilian Defense: Taimanov Variation": {
+      "name": "타이마노프 변화",
+      "summary": "흑이 ...e6과 ...Nc6을 함께 둬 d4 나이트를 견제해요. ...Qc7과 ...a6으로 퀸 쪽을 유연하게 준비해요.",
+      "line": "1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nc6 5. Nc3 Qc7 6. Be3 a6 7. Qd2 Nf6 8. O-O-O Bb4 9. f3 Ne5 10. Nb3 b5"
+    },
+    "Sicilian Defense: Dragon Variation": {
+      "name": "드래곤 변화",
+      "summary": "...g6과 ...Bg7로 흑 비숍이 긴 대각선에 자리 잡아요. 백이 반대쪽에 캐슬링하고 h폰을 밀면 서로 킹을 향해 달려요.",
+      "line": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6 6. Be3 Bg7 7. f3 O-O 8. Qd2 Nc6 9. Bc4 Bd7 10. O-O-O Rc8 11. Bb3 Ne5 12. h4 h5"
+    },
+    "Sicilian Defense: Scheveningen Variation": {
+      "name": "스헤베닝언 변화",
+      "summary": "d6과 e6 두 폰이 흑 진영에 낮고 작은 중앙을 이뤄요. e6 폰이 d5를, d6 폰이 e5를 막아 백 기물이 들어올 틈이 적어요.",
+      "line": "1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 d6 6. Be2 a6 7. O-O Be7 8. f4 O-O 9. Kh1 Qc7 10. a4 Nc6 11. Be3 Re8"
+    },
+    "Sicilian Defense: Lasker-Pelikan Variation": {
+      "name": "라스커-펠리칸 변화",
+      "summary": "흑이 5...e5로 d4 나이트를 쫓는 대신 d5 칸이 약해져요. 백은 d5에 나이트를 앉히고, 흑은 비숍 쌍과 ...f5로 맞서요.",
+      "line": "1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e5 6. Ndb5 d6 7. Bg5 a6 8. Na3 b5 9. Bxf6 gxf6 10. Nd5 f5 11. Bd3 Be6 12. O-O Bxd5 13. exd5 Ne7"
+    },
+    "Sicilian Defense: Alapin Variation": {
+      "name": "알라핀 변화",
+      "summary": "백이 2.c3로 d4를 폰으로 받칠 준비를 해요. 흑은 2...d5나 2...Nf6로 e4를 먼저 건드려 백 중앙을 흔들어요.",
+      "line": "1. e4 c5 2. c3 d5 3. exd5 Qxd5 4. d4 Nf6 5. Nf3 Bg4 6. Be2 e6 7. O-O Nc6 8. h3 Bh5 9. Be3 cxd4 10. cxd4 Be7"
+    },
+    "Sicilian Defense: Smith-Morra Gambit": {
+      "name": "스미스-모라 갬빗",
+      "summary": "백이 3.c3로 폰을 내주고 c줄과 d줄, 빠른 전개를 얻어요. 폰 하나를 앞선 흑은 기물을 조심스럽게 꺼내요.",
+      "line": "1. e4 c5 2. d4 cxd4 3. c3 dxc3 4. Nxc3 Nc6 5. Nf3 d6 6. Bc4 e6 7. O-O Nf6 8. Qe2 Be7 9. Rd1 e5 10. h3 O-O"
+    },
+    "Sicilian Defense: Nyezhmetdinov-Rossolimo Attack": {
+      "name": "로솔리모 어택",
+      "summary": "3.Bb5가 c6 나이트를 겨누고, 때로는 Bxc6으로 흑 폰을 겹치게 만들어요. 열린 시실리안 대신 조용한 기동전을 고르는 길이에요.",
+      "line": "1. e4 c5 2. Nf3 Nc6 3. Bb5 g6 4. Bxc6 dxc6 5. d3 Bg7 6. h3 Nf6 7. Nc3 O-O 8. Be3 b6 9. Qd2 e5 10. Bh6 Bxh6 11. Qxh6 Qd6"
+    },
+    "French Defense: Marshall Gambit": {
+      "name": "마셜 갬빗",
+      "summary": "흑이 3...c5로 곧바로 d4에 손을 대요. 폰을 바꾸고 나면 흑은 고립된 d5 폰을 안는 대신 기물이 빨리 나와요.",
+      "line": "1. e4 e6 2. d4 d5 3. Nc3 c5 4. exd5 exd5 5. Nf3 Nc6 6. Bb5 Bd6 7. dxc5 Bxc5 8. O-O Nge7 9. Re1 O-O 10. Be3 Bxe3 11. Rxe3 Bg4"
+    },
+    "French Defense: Normal Variation": {
+      "name": "노멀 변화",
+      "summary": "백이 2.d4로 중앙 폰 두 개를 세우면 흑은 2...d5로 맞서요. 3.Nc3로 e4를 지키고 4.Bg5로 f6 나이트를 묶는 길이 고전 수순이에요.",
+      "line": "1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. Bg5 Be7 5. e5 Nfd7 6. Bxe7 Qxe7 7. f4 a6 8. Nf3 c5 9. Qd2 Nc6 10. dxc5 Qxc5"
+    },
+    "French Defense: Paulsen Variation": {
+      "name": "파울센 변화",
+      "summary": "3.Nc3는 나이트를 꺼내면서 e4도 지켜요. 흑의 대답은 3...Bb4, 3...Nf6, 3...dxe4로 크게 갈려요.",
+      "line": "1. e4 e6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nd7 5. Nf3 Ngf6 6. Nxf6+ Nxf6 7. Bd3 c5 8. dxc5 Bxc5 9. O-O O-O 10. Qe2 b6 11. Bg5 Bb7 12. Rad1 Qc7"
+    },
+    "French Defense: Winawer Variation": {
+      "name": "위나워 변화",
+      "summary": "3...Bb4가 e4를 지키는 c3 나이트를 묶어요. ...Bxc3+ 뒤 백은 c폰이 겹치지만 비숍 쌍과 킹 쪽 공격 기회를 얻어요.",
+      "line": "1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 c5 5. a3 Bxc3+ 6. bxc3 Ne7 7. Qg4 Qc7 8. Qxg7 Rg8 9. Qxh7 cxd4 10. Ne2 Nbc6 11. f4 Bd7 12. Qd3 dxc3"
+    },
+    "French Defense: Advance Variation": {
+      "name": "어드밴스 변화",
+      "summary": "3.e5로 백은 공간을 넓히고 흑 나이트의 f6 자리를 빼앗아요. 흑은 ...c5와 ...Nc6로 폰 사슬의 밑동인 d4를 압박해요.",
+      "line": "1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Qb6 6. a3 c4 7. Nbd2 Na5 8. Rb1 Bd7 9. h4 Ne7 10. h5 h6"
+    },
+    "French Defense: Tarrasch Variation": {
+      "name": "타라시 변화",
+      "summary": "3.Nd2는 c폰 앞을 비워 두어 c3로 d4를 받치기 쉬워요. 3...Nf6 4.e5 뒤에는 흑이 ...c5와 ...f6으로 사슬을 흔들어요.",
+      "line": "1. e4 e6 2. d4 d5 3. Nd2 Nf6 4. e5 Nfd7 5. Bd3 c5 6. c3 Nc6 7. Ne2 cxd4 8. cxd4 f6 9. exf6 Nxf6 10. Nf3 Bd6 11. O-O Qc7"
+    },
+    "French Defense: Exchange Variation": {
+      "name": "교환 변화",
+      "summary": "백이 3.exd5로 폰을 바꿔 폰 구조가 대칭이 돼요. 흑의 c8 비숍도 길이 열려 양쪽 모두 편하게 전개해요.",
+      "line": "1. e4 e6 2. d4 d5 3. exd5 exd5 4. Nf3 Nf6 5. Bd3 Bd6 6. O-O O-O 7. Bg5 Bg4 8. Nbd2 Nbd7 9. c3 c6 10. Qc2 Qc7"
+    },
+    "Caro-Kann Defense: Karpov Variation": {
+      "name": "카르포프 변화",
+      "summary": "흑이 4...Nd7을 먼저 둬, ...Ngf6 뒤 Nxf6+가 와도 나이트로 되잡게 해요. 폰 구조가 상하지 않아 끝까지 튼튼해요.",
+      "line": "1. e4 c6 2. d4 d5 3. Nd2 dxe4 4. Nxe4 Nd7 5. Ng5 Ngf6 6. Bd3 e6 7. N1f3 Bd6 8. Qe2 h6 9. Ne4 Nxe4 10. Qxe4 Nf6 11. Qe2 b6 12. Bd2 Bb7 13. O-O-O Qc7"
+    },
+    "Caro-Kann Defense: Main Line": {
+      "name": "메인 라인",
+      "summary": "백 나이트가 e4를 되잡아 중앙에 자리 잡은 포지션이에요. 4...Nf6 5.Nxf6+ exf6처럼 흑이 겹폰을 받고 빠른 전개를 택하기도 해요.",
+      "line": "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Nxf6+ exf6 6. c3 Bd6 7. Bd3 O-O 8. Qc2 Re8+ 9. Ne2 h6 10. O-O Nd7"
+    },
+    "Caro-Kann Defense: Advance Variation": {
+      "name": "어드밴스 변화",
+      "summary": "백이 3.e5로 공간을 잡지만, 흑은 ...e6보다 3...Bf5로 비숍을 먼저 꺼내요. 그 뒤 ...e6과 ...c5로 d4를 공격해요.",
+      "line": "1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 5. Be2 c5 6. Be3 Nd7 7. O-O Ne7 8. c4 dxc4 9. Na3 Nd5 10. Nxc4 Be7"
+    },
+    "Caro-Kann Defense: Exchange Variation": {
+      "name": "교환 변화",
+      "summary": "3.exd5 cxd5로 중앙이 단순해져요. 흑은 반쯤 열린 c줄과 ...b5-b4 같은 퀸 쪽 폰 전진으로 c3를 압박해요.",
+      "line": "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Bd3 Nc6 5. c3 Nf6 6. Bf4 Bg4 7. Qb3 Qd7 8. Nd2 e6 9. Ngf3 Bd6 10. Bxd6 Qxd6 11. O-O O-O 12. Rae1 Rab8"
+    },
+    "Caro-Kann Defense: Panov Attack": {
+      "name": "파노프 어택",
+      "summary": "백이 4.c4로 d5를 흔들어 고립된 d폰 구조로 이끌어요. 백은 활발한 기물로 공격하고, 흑은 d5 칸을 막고 버텨요.",
+      "line": "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4 Nf6 5. Nc3 e6 6. Nf3 Be7 7. cxd5 Nxd5 8. Bd3 Nc6 9. O-O O-O 10. Re1 Bf6 11. Be4 Nce7"
+    },
+    "Caro-Kann Defense: Classical Variation": {
+      "name": "클래식 변화",
+      "summary": "4...Bf5는 e4 나이트를 바로 공격해요. 백은 Ng3로 비숍을 쫓은 뒤 h4-h5로 킹 쪽 공간을 넓혀요.",
+      "line": "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. h4 h6 7. Nf3 Nd7 8. h5 Bh7 9. Bd3 Bxd3 10. Qxd3 e6 11. Bd2 Ngf6 12. O-O-O Be7 13. Kb1 O-O"
     }
   }
 }
