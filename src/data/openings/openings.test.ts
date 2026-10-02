@@ -10,8 +10,7 @@ const base = (): KoOpenings => JSON.parse(JSON.stringify(ko))
 
 describe('ko.json', () => {
   it('실제 데이터가 검증을 통과한다', () => {
-    // 씨앗 데이터의 필리도르 디펜스에는 아직 변화 설명이 없다. Task 8 Step 5에서 옵션을 지운다
-    expect(validateKoOpenings(ko as KoOpenings, INDEX, { requireVariations: false })).toEqual([])
+    expect(validateKoOpenings(ko as KoOpenings, INDEX)).toEqual([])
   })
 })
 
