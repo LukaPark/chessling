@@ -7,6 +7,7 @@ import { http, HttpResponse } from 'msw'
 import { useMswServer } from '../../test/msw'
 import { boardProps } from '../../test/boardMock'
 import { renderRoute } from '../../test/renderRoute'
+import { resetGuidePrefForTest } from '../../app/guidePref'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
 vi.mock('../../sources/annotations', () => ({
@@ -20,6 +21,7 @@ vi.mock('../../sources/annotations', () => ({
           plies: [
             { ply: 0, text: '파리 오페라 극장 귀빈석에서 둔 한 판이에요.' },
             { ply: 1, text: '중앙을 차지하며 시작해요.', key: true },
+            { ply: 2, text: '흑도 중앙을 받아요.', guide: ['e5'] },
           ],
         }
       : null,
@@ -30,7 +32,11 @@ const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
 const AFTER_E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
 
 const server = useMswServer()
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  localStorage.clear()
+  resetGuidePrefForTest()
+})
 
 function analysisEngine() {
   return new UciEngine(
@@ -39,6 +45,31 @@ function analysisEngine() {
 }
 
 describe('ViewerPage', () => {
+  it('가이드: 수가 노리는 기물에 화살표를 그리고, 끄면 사라지며 다시 열어도 꺼져 있다', async () => {
+    renderRoute('/game/classic/opera-game')
+    await screen.findByRole('region', { name: '이번 수 판정' })
+    for (let i = 0; i < 13; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+    await waitFor(() => expect(boardProps.current?.shapes).toContainEqual({ orig: 'b3', dest: 'b7', brush: 'green' }))
+
+    const toggle = screen.getByRole('button', { name: '가이드' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(toggle)
+    await waitFor(() => expect(boardProps.current?.shapes ?? []).not.toContainEqual(expect.objectContaining({ brush: 'green' })))
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+
+    cleanup()
+    renderRoute('/game/classic/opera-game')
+    await screen.findByRole('region', { name: '이번 수 판정' })
+    fireEvent.keyDown(window, { key: 'End' })
+    expect(await screen.findByRole('button', { name: '가이드' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('가이드: 시작 포지션에는 토글이 없다', async () => {
+    renderRoute('/game/classic/opera-game')
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    expect(within(card).queryByRole('button', { name: '가이드' })).toBeNull()
+  })
+
   it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {
     renderRoute('/game/classic/opera-game')
     const card = await screen.findByRole('region', { name: '이번 수 판정' })
@@ -105,6 +136,8 @@ describe('ViewerPage', () => {
     expect(screen.getByRole('button', { name: '다음 수' })).toBeDisabled()
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(boardProps.current?.fen).toBe(AFTER_E5)
+    // 퀴즈 중에는 가이드를 그리지 않는다(위 e5 빨간 원이 퀴즈 보드에 남지 않는다)
+    expect(boardProps.current?.shapes ?? []).toEqual([])
     expect(boardProps.current?.movable?.color).toBe('white')
 
     act(() => boardProps.current!.movable!.onMove('g1', 'f3'))

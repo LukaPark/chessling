@@ -63,4 +63,22 @@ describe('extractFacts', () => {
     const plies = pliesFrom('4k3/3n4/8/8/8/8/8/3RK3 w - - 0 1', ['Rxd7'])
     expect(kinds(extractFacts(input(plies, [pos(0), pos(500)], 1)))).not.toContain('rookFile')
   })
+  it('가이드용 칸 정보: 포크 목표 칸', () => {
+    const plies = pliesFrom('r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1', ['Nc7+'])
+    const fork = extractFacts(input(plies, [pos(0), pos(500)], 1)).find((x) => x.kind === 'fork')
+    expect(fork && fork.kind === 'fork' ? [...(fork.targetSquares ?? [])].sort() : []).toEqual(['a8', 'e8'])
+  })
+  it('가이드용 칸 정보: 핀을 거는 기물 칸', () => {
+    const plies = pliesFrom('4k3/8/2n5/8/8/8/8/4KB2 w - - 0 1', ['Bb5'])
+    expect(extractFacts(input(plies, [pos(0), pos(300)], 1)).find((x) => x.kind === 'pin')).toMatchObject({ from: 'b5', square: 'c6', pinned: 'n', behind: 'k' })
+  })
+  it('가이드용 칸 정보: 놓친 수와 반박 수의 UCI', () => {
+    const plies = pliesFrom('4k3/8/8/3q4/8/8/8/3RK3 w - - 0 1', ['Ke2'])
+    const missed = extractFacts(input(plies, [pos(900, 'd1d5', ['d1d5']), pos(-900)], 1, [null, 'blunder'])).find((x) => x.kind === 'missed')
+    expect(missed).toMatchObject({ uci: 'd1d5' })
+
+    const p2 = pliesFrom('3rk3/8/8/8/8/8/8/3QK3 w - - 0 1', ['Ke2'])
+    const ref = extractFacts(input(p2, [pos(0), pos(-900, 'd8d1', ['d8d1'])], 1, [null, 'blunder'])).find((x) => x.kind === 'refutation')
+    expect(ref).toMatchObject({ uci: 'd8d1', target: 'q', square: 'd1' })
+  })
 })

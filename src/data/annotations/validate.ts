@@ -1,6 +1,8 @@
 import { Chess } from 'chess.js'
 import type { Ply } from '../../chess/types'
+import { GUIDE_MAX } from '../../engine/comment/guide'
 import type { Annotations } from '../../sources/annotations'
+import { parseGuideToken } from '../../sources/guideNotation'
 
 /** 1: 수 번호("12." "12...") 2: SAN 모양 토큰 */
 const SAN = /(\d+\.(?:\.\.)?\s*)?\b(O-O(?:-O)?|[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?)/g
@@ -45,6 +47,7 @@ export function validateAnnotations(a: Annotations, plies: Ply[]): string[] {
     for (const b of BANNED) if (b.test(p.text)) errors.push(`${p.ply}수: 금칙어 ${b}`)
     const before = plies[Math.max(0, p.ply - 1)].fen
     const after = plies[p.ply].fen
+    if (p.guide) errors.push(...guideErrors(p.ply, p.guide, before, after))
     const lines = [...p.text.matchAll(/\[\[(.+?)\]\]/g)].map((m) => m[1])
     for (const l of lines) if (!lineOk(before, l) && !lineOk(after, l)) errors.push(`${p.ply}수: 가정 수순을 둘 수 없음 "${l}"`)
     const lineMoves = new Set(lines.flatMap(lineSans).map(plain))
@@ -67,6 +70,13 @@ export function validateAnnotations(a: Annotations, plies: Ply[]): string[] {
       errors.push(`장면 ${s.id}: 시작 수(${s.startPly})가 경기 범위 밖`)
       continue
     }
+    const first = s.steps[0]?.answerUci.slice(0, 4)
+    for (const ply of [s.startPly - 2, s.startPly - 1, s.startPly]) {
+      const guide = byPly.get(ply)?.guide ?? []
+      if (first && guide.some((t) => { const g = parseGuideToken(t); return g?.from !== undefined && g.from + g.to === first })) {
+        errors.push(`장면 ${s.id}: ${ply}수 가이드가 첫 정답을 보여 줌`)
+      }
+    }
     const c = new Chess(plies[s.startPly].fen)
     if (c.turn() !== s.side) errors.push(`장면 ${s.id}: 둘 쪽이 맞지 않음`)
     for (const [k, step] of s.steps.entries()) {
@@ -82,4 +92,32 @@ export function validateAnnotations(a: Annotations, plies: Ply[]): string[] {
     }
   }
   return errors
+}
+
+/** 가이드: 표기, 개수, 화살표가 실제로 닿는지(사이에 낀 기물에 막히는 것까지), 놓친 수는 둘 수 있는 수인지 */
+function guideErrors(ply: number, list: string[], before: string, after: string): string[] {
+  const out: string[] = []
+  if (ply === 0) out.push('0수: 시작 포지션에는 가이드를 둘 수 없음')
+  if (list.length > GUIDE_MAX) out.push(`${ply}수: 가이드 ${list.length}개 (최대 ${GUIDE_MAX}개)`)
+  for (const t of list) {
+    const g = parseGuideToken(t)
+    if (!g) {
+      out.push(`${ply}수: 가이드 표기를 읽을 수 없음 "${t}"`)
+      continue
+    }
+    if (!g.from) {
+      if (g.kind === 'danger' && !new Chess(after).get(g.to)) out.push(`${ply}수: 가이드 "${t}" 칸이 비어 있음`)
+      continue
+    }
+    if (g.kind === 'missed') {
+      const legal = new Chess(before).moves({ verbose: true }).some((m) => m.from === g.from && m.to === g.to)
+      if (!legal) out.push(`${ply}수: 가이드 "${t}"는 직전 포지션에서 둘 수 없는 수`)
+      continue
+    }
+    const c = new Chess(after)
+    const piece = c.get(g.from)
+    if (!piece) out.push(`${ply}수: 가이드 "${t}" 출발 칸이 비어 있음`)
+    else if (!c.attackers(g.to, piece.color).includes(g.from)) out.push(`${ply}수: 가이드 "${t}"의 기물이 ${g.to}에 닿지 않음`)
+  }
+  return out
 }

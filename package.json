@@ -21,7 +21,8 @@
     "annotate:facts": "tsx scripts/annotate/facts.ts",
     "annotate:preview": "tsx scripts/annotate/preview-comments.ts",
     "annotate:view": "tsx scripts/annotate/view-facts.ts",
-    "annotate:probe": "tsx scripts/annotate/probe-moves.ts"
+    "annotate:probe": "tsx scripts/annotate/probe-moves.ts",
+    "annotate:guide": "tsx scripts/annotate/view-guide.ts"
   },
   "dependencies": {
     "@lichess-org/chessground": "10.4.1",
