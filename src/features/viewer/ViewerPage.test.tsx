@@ -10,11 +10,16 @@ import { renderRoute } from '../../test/renderRoute'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
 // 색인은 ?url 에셋을 fetch로 받는데, jsdom에는 그 에셋이 없다. 실제 JSON을 바로 넘긴다.
+const openingMock = vi.hoisted(() => ({ emptyIndex: false, loaded: 0 }))
 vi.mock('../../sources/openings', () => ({
-  loadOpeningData: async () => ({
-    index: (await import('../../data/openings/index.json')).default,
-    ko: (await import('../../data/openings/ko.json')).default,
-  }),
+  loadOpeningData: async () => {
+    const data = {
+      index: openingMock.emptyIndex ? [] : (await import('../../data/openings/index.json')).default,
+      ko: (await import('../../data/openings/ko.json')).default,
+    }
+    openingMock.loaded++
+    return data
+  },
 }))
 vi.mock('../../sources/annotations', () => ({
   annotationSlugs: () => ['opera-game'],
@@ -66,6 +71,21 @@ describe('ViewerPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: '오프닝' }, { timeout: 3000 }))
     expect(screen.getByText(/^백: d4로 중앙을 열고/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '이 수순으로 연습' })).toBeInTheDocument()
+  })
+
+  it('한 수도 알려진 오프닝에 맞지 않으면 오프닝 섹션을 숨긴다', async () => {
+    openingMock.emptyIndex = true
+    const before = openingMock.loaded
+    try {
+      renderRoute('/game/classic/opera-game')
+      await screen.findByRole('heading', { name: /Paul Morphy/ })
+      await waitFor(() => expect(openingMock.loaded).toBeGreaterThan(before))
+      await act(async () => {})
+      expect(screen.getByRole('button', { name: '엔진 라인' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '오프닝' })).toBeNull()
+    } finally {
+      openingMock.emptyIndex = false
+    }
   })
 
   it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {

@@ -34,11 +34,19 @@ describe('OpeningPanel', () => {
     expect(screen.getByText('계열 아이디어예요.')).toBeInTheDocument()
     expect(screen.getByText('백: 백 계획이에요.')).toBeInTheDocument()
     expect(screen.getByText('변화 요약이에요.')).toBeInTheDocument()
-    expect(screen.getByLabelText('대표 수순')).toHaveTextContent('1.e4c52.Nf3d63.d4cxd44.Nxd4Nf65.Nc3a66.Be3')
+    const line = screen.getByRole('group', { name: '대표 수순' })
+    expect(line).toHaveTextContent('1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 (여기부터 이 대국과 다름) 6.Be3')
     fireEvent.click(screen.getByRole('button', { name: '이 수순으로 연습' }))
     expect(onPractice).toHaveBeenCalledWith(track.byPly[10])
     fireEvent.click(screen.getByRole('button', { name: '이탈 지점에서 분기' }))
     expect(onBranch).toHaveBeenCalled()
+  })
+
+  it('대표 수순을 끝까지 따랐으면 갈라지는 지점 안내를 넣지 않는다', () => {
+    const plies = pgnToPlies(`${NAJDORF} 6. Be3 *`)
+    const track = identifyOpening(plies, DATA)!
+    render(<OpeningPanel track={track} plies={plies} ply={11} onPractice={() => {}} onBranchAtDeviation={() => {}} />)
+    expect(screen.getByRole('group', { name: '대표 수순' })).not.toHaveTextContent('여기부터')
   })
 
   it('이론에서 벗어나지 않았으면 이탈 분기 버튼을 숨긴다', () => {

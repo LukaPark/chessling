@@ -21,7 +21,7 @@ import { isMultiThreaded } from '../../engine/engines'
 import { terminalScore } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
 import type { OpeningAt } from '../../openings/types'
-import { cardOpening, openingLabel, practiceLine } from '../../openings/view'
+import { cardOpening, hasOpening, practiceLine, practiceTitle } from '../../openings/view'
 import { selectScenes } from '../../quiz/selectScenes'
 import type { QuizScene } from '../../quiz/types'
 import { queryKeys } from '../../sources'
@@ -104,6 +104,8 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   const authored = annotations?.plies.find((a) => a.ply === ply) ?? null
   const openingTrack = useOpening(plies)
   const opening = openingTrack ? cardOpening(openingTrack, plies, ply) : null
+  // 판별은 했지만 한 수도 색인에 맞지 않았으면 오프닝 섹션을 숨긴다
+  const showOpening = openingTrack !== null && hasOpening(openingTrack)
   useEffect(() => setHint(false), [ply])
 
   const startFork = async ({ playerColor, engineElo }: { playerColor: Color; engineElo: number }) => {
@@ -135,7 +137,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     setForkTarget({
       startFen: line.endFen,
       originPly: at.ply,
-      title: `${openingLabel(at).split(' · ').slice(1).join(' · ')} 연습`,
+      title: practiceTitle(at),
       dialogTitle: '이 수순으로 연습하기',
       note: `대표 수순: ${sans}`,
     })
@@ -300,7 +302,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
             {positions.length > 0 && (
               <EvalGraph key={review.status} scores={graphScores} current={ply} onSelect={go} reveal={review.status === 'done'} />
             )}
-            {openingTrack && (
+            {showOpening && openingTrack && (
               <Disclosure title="오프닝">
                 <OpeningPanel track={openingTrack} plies={plies} ply={ply} onPractice={practiceOpening} onBranchAtDeviation={branchAtDeviation} />
               </Disclosure>
@@ -330,7 +332,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
 
       {movesOpen && (
         <Dialog variant="sheet" title="기보" onClose={() => setMovesOpen(false)}>
-          {openingTrack && (
+          {showOpening && openingTrack && (
             <Disclosure title="오프닝">
               <OpeningPanel
                 track={openingTrack}

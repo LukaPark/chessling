@@ -3,7 +3,7 @@ import { pgnToPlies } from '../chess/pgn'
 import { buildIndex } from './buildIndex'
 import { identifyOpening } from './identify'
 import type { OpeningData } from './types'
-import { cardOpening, compareLine, openingLabel, practiceLine } from './view'
+import { cardOpening, compareLine, hasOpening, openingLabel, practiceLine, practiceTitle } from './view'
 
 const NAJDORF = '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6'
 const { entries } = buildIndex([
@@ -64,6 +64,22 @@ describe('practiceLine', () => {
     expect(najdorf.endFen).toBe(plies[10].fen)
     const sicilian = practiceLine(track.byPly[2]!)
     expect(sicilian.uci).toEqual(['e2e4', 'c7c5'])
+  })
+})
+
+describe('practiceTitle', () => {
+  it('한국어 계열·변화명, 계열명만, 원문 이름 순으로 고른다', () => {
+    expect(practiceTitle(track.byPly[10]!)).toBe('시실리안 디펜스: 나이도르프 변화 연습')
+    expect(practiceTitle(track.byPly[2]!)).toBe('시실리안 디펜스 연습')
+    const k = identifyOpening(pgnToPlies('1. e4 e5 *'), DATA)!
+    expect(practiceTitle(k.byPly[2]!)).toBe("King's Pawn Game 연습")
+  })
+})
+
+describe('hasOpening', () => {
+  it('한 수라도 색인에 맞았는지 알려 준다', () => {
+    expect(hasOpening(track)).toBe(true)
+    expect(hasOpening(identifyOpening(pgnToPlies('1. e4 e5 *'), { ...DATA, index: [] })!)).toBe(false)
   })
 })
 

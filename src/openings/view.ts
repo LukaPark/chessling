@@ -13,6 +13,17 @@ export function openingLabel(at: OpeningAt): string {
   return variationEn ? `${at.entry.eco} · ${head} · ${variationEn}` : `${at.entry.eco} · ${head}`
 }
 
+/** 분기 레코드 제목: `{계열}: {변화} 연습`, 한국어가 없으면 원문 이름 */
+export function practiceTitle(at: OpeningAt): string {
+  if (!at.family) return `${at.entry.name} 연습`
+  return at.variation ? `${at.family.name}: ${at.variation.name} 연습` : `${at.family.name} 연습`
+}
+
+/** 한 수라도 색인에 맞았는지(맞은 적이 없으면 오프닝 섹션을 숨긴다) */
+export function hasOpening(track: OpeningTrack): boolean {
+  return track.byPly.some((x) => x !== null)
+}
+
 export interface CardOpening {
   label: string
   /** 이 수에서 오프닝 이름이 바뀌었다 */

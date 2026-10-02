@@ -1,9 +1,11 @@
 import { DEFAULT_POSITION } from 'chess.js'
+import { Fragment } from 'react'
 import { moveNumberOf } from '../../chess/moveNumber'
 import type { Ply } from '../../chess/types'
 import type { OpeningAt, OpeningTrack } from '../../openings/types'
 import { compareLine, openingLabel, practiceLine } from '../../openings/view'
 import * as v from '../../styles/features/viewer.css'
+import { visuallyHidden } from '../../ui/a11y.css'
 import { Button } from '../../ui/Button'
 import { cx } from '../../ui/cx'
 
@@ -32,17 +34,21 @@ export function OpeningPanel({ track, plies, ply, onPractice, onBranchAtDeviatio
         </>
       )}
       {at.variation && <p>{at.variation.summary}</p>}
-      <p className={v.openingLine} aria-label="대표 수순">
+      <div role="group" className={v.openingLine} aria-label="대표 수순">
         {line.san.map((san, i) => {
           const { number, white } = moveNumberOf(DEFAULT_POSITION, i + 1)
           return (
-            <span key={i} className={cx(i < same ? v.lineSame : v.lineOther)}>
-              {white ? `${number}.` : ''}
-              {san}
-            </span>
+            <Fragment key={i}>
+              {i > 0 && ' '}
+              {i === same && <span className={visuallyHidden}>(여기부터 이 대국과 다름) </span>}
+              <span className={cx(i < same ? v.lineSame : v.lineOther)}>
+                {white ? `${number}.` : ''}
+                {san}
+              </span>
+            </Fragment>
           )
         })}
-      </p>
+      </div>
       <div className={v.openingActions}>
         <Button size="sm" onClick={() => onPractice(at)}>
           이 수순으로 연습
