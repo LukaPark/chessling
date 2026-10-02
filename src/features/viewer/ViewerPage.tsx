@@ -20,6 +20,7 @@ import { commentsForGame } from '../../engine/comment'
 import { isMultiThreaded } from '../../engine/engines'
 import { terminalScore } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
+import type { OpeningAt } from '../../openings/types'
 import { cardOpening } from '../../openings/view'
 import { selectScenes } from '../../quiz/selectScenes'
 import type { QuizScene } from '../../quiz/types'
@@ -31,6 +32,7 @@ import { Disclosure } from '../../ui/Disclosure'
 import { NotFound } from '../NotFound'
 import { ForkDialog } from '../play/ForkDialog'
 import { JudgmentCard } from './JudgmentCard'
+import { OpeningPanel } from './OpeningPanel'
 import { ActiveQuiz } from './quiz/ActiveQuiz'
 import { EvaluationCancelled, type QuizFinish } from './quiz/useQuiz'
 import { useAnnotations } from './useAnnotations'
@@ -126,6 +128,14 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     }
     await qc.invalidateQueries({ queryKey: ['forks'] })
     navigate(`/play/${fork.id}`)
+  }
+
+  const practiceOpening = (_at: OpeningAt) => setForking(true)
+  const branchAtDeviation = () => {
+    if (openingTrack?.deviation) {
+      manualSetPly(openingTrack.deviation.ply - 1)
+      setForking(true)
+    }
   }
 
   const { state: review, start: startReview } = useReview(gameRef, plies, record.result !== '*')
@@ -278,6 +288,11 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
             {positions.length > 0 && (
               <EvalGraph key={review.status} scores={graphScores} current={ply} onSelect={go} reveal={review.status === 'done'} />
             )}
+            {openingTrack && (
+              <Disclosure title="오프닝">
+                <OpeningPanel track={openingTrack} plies={plies} ply={ply} onPractice={practiceOpening} onBranchAtDeviation={branchAtDeviation} />
+              </Disclosure>
+            )}
             <Disclosure title="엔진 라인" open={linesOpen} onOpenChange={setLinesOpen}>
               {reviewing ? <p className={g.note}>리뷰 중에는 실시간 분석을 잠시 멈춰요.</p> : <EngineLines fen={fen} lines={live.lines} />}
             </Disclosure>
@@ -303,6 +318,23 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
 
       {movesOpen && (
         <Dialog variant="sheet" title="기보" onClose={() => setMovesOpen(false)}>
+          {openingTrack && (
+            <Disclosure title="오프닝">
+              <OpeningPanel
+                track={openingTrack}
+                plies={plies}
+                ply={ply}
+                onPractice={(at) => {
+                  setMovesOpen(false)
+                  practiceOpening(at)
+                }}
+                onBranchAtDeviation={() => {
+                  setMovesOpen(false)
+                  branchAtDeviation()
+                }}
+              />
+            </Disclosure>
+          )}
           <MoveList
             plies={plies}
             current={ply}

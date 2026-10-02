@@ -49,3 +49,9 @@ export const moreButton = style({
 export const quizRow = style({ display: 'flex', justifyContent: 'start' })
 export const openingName = style({ color: vars.color.muted, fontSize: fontSize.control, wordBreak: 'keep-all', overflowWrap: 'anywhere' })
 export const badges = style({ display: 'flex', flexWrap: 'wrap', gap: space[2] })
+
+export const openingPanel = style({ display: 'grid', gap: space[3] })
+export const openingLine = style({ display: 'flex', flexWrap: 'wrap', gap: `${space[1]} ${space[2]}`, fontVariantNumeric: 'tabular-nums' })
+export const lineSame = style({ fontWeight: weight.medium, color: vars.color.ink })
+export const lineOther = style({ color: vars.color.accent })
+export const openingActions = style({ display: 'flex', flexWrap: 'wrap', gap: space[2] })

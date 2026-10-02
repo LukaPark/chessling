@@ -48,6 +48,15 @@ describe('ViewerPage', () => {
     expect(within(card).getByText(/e5 폰을 단단히 받치는/)).toBeInTheDocument()
   })
 
+  it('오프닝 섹션을 펼치면 계열 설명과 연습 버튼이 보인다', async () => {
+    renderRoute('/game/classic/opera-game')
+    await screen.findByRole('heading', { name: /Paul Morphy/ })
+    for (let i = 0; i < 4; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.click(await screen.findByRole('button', { name: '오프닝' }, { timeout: 3000 }))
+    expect(screen.getByText(/^백: d4로 중앙을 열고/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '이 수순으로 연습' })).toBeInTheDocument()
+  })
+
   it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {
     renderRoute('/game/classic/opera-game')
     const card = await screen.findByRole('region', { name: '이번 수 판정' })
