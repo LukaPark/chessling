@@ -36,6 +36,18 @@ export class EngineCrashedError extends Error {
   }
 }
 
+/** 첫 준비 전에 워커가 죽으면 한 번만 갈아탈 워커 */
+export interface EngineFallback {
+  factory: WorkerFactory
+  /** 대체 워커에 덮어쓸 옵션(예: Threads 1) */
+  options?: Record<string, string | number>
+  /** 대체로 갈아탄 순간 한 번 불린다 */
+  onFallback?: () => void
+}
+
+/** 시작 중 대체로 갈아탔음을 준비 대기자에게 알린다. 밖으로 새지 않는다. */
+class RestartWithFallback extends Error {}
+
 interface Job {
   fen: string
   go: string
@@ -66,12 +78,28 @@ export class UciEngine {
   private desired: Record<string, string | number>
   private idleWaiters: (() => void)[] = []
   private attempts = 0
+  /** 지금 워커가 첫 readyok까지 갔는지 */
+  private booted = false
+  private factory: WorkerFactory
 
   constructor(
-    private readonly factory: WorkerFactory,
-    private readonly baseOptions: Record<string, string | number> = {},
+    factory: WorkerFactory,
+    baseOptions: Record<string, string | number> = {},
+    private fallback?: EngineFallback,
   ) {
+    this.factory = factory
     this.desired = { ...baseOptions }
+  }
+
+  /** 다음 워커부터 대체 팩토리를 쓴다. 이미 갈아탔거나 대체가 없으면 아무것도 하지 않는다. */
+  useFallback(): boolean {
+    const fallback = this.fallback
+    if (!fallback) return false
+    this.fallback = undefined
+    this.factory = fallback.factory
+    Object.assign(this.desired, fallback.options)
+    fallback.onFallback?.()
+    return true
   }
 
   analyze(fen: string, opts: AnalyzeOptions = {}, onInfo?: (lines: EngineLine[]) => void): Promise<SearchResult> {
@@ -218,12 +246,20 @@ export class UciEngine {
       worker.onerror = () => this.onCrash(worker)
       this.worker = worker
       this.multiPv = 1
+      this.booted = false
       this.ready = (async () => {
-        this.send('uci')
-        await this.waitFor((l) => l === 'uciok')
-        for (const [name, value] of Object.entries(this.desired)) this.send(`setoption name ${name} value ${value}`)
-        this.send('isready')
-        await this.waitFor((l) => l === 'readyok')
+        try {
+          this.send('uci')
+          await this.waitFor((l) => l === 'uciok')
+          for (const [name, value] of Object.entries(this.desired)) this.send(`setoption name ${name} value ${value}`)
+          this.send('isready')
+          await this.waitFor((l) => l === 'readyok')
+          if (this.worker === worker) this.booted = true
+        } catch (e) {
+          // 대체 워커의 준비를 그대로 이어받아, 기다리던 쪽(setOptions 등)이 실패하지 않게 한다.
+          if (e instanceof RestartWithFallback) return this.ensureReady()
+          throw e
+        }
       })()
     }
     return this.ready
@@ -261,12 +297,17 @@ export class UciEngine {
     worker.terminate()
     this.worker = null
     this.ready = null
-    for (const w of this.waiters.splice(0)) w.reject(new EngineCrashedError())
+    // 첫 준비 전에 죽은 건 이 환경에서 그 빌드가 뜨지 못한다는 뜻이라 재시도 대신 대체로 갈아탄다.
+    const fellBack = !this.booted && this.useFallback()
+    for (const w of this.waiters.splice(0)) w.reject(fellBack ? new RestartWithFallback() : new EngineCrashedError())
     const job = this.current
     this.current = null
     if (job) {
       if (job.cancelled) job.resolve(cancelledResult())
-      else if (!job.retried) {
+      else if (fellBack) {
+        job.lines = []
+        this.queue.unshift(job)
+      } else if (!job.retried) {
         job.retried = true
         job.lines = []
         this.queue.unshift(job)

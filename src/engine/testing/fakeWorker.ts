@@ -9,6 +9,8 @@ export interface FakeEngineScript {
   holdGoCount?: number
   /** 이 워커의 N번째 `go`(1부터)에서 onerror를 발생시킨다 */
   crashOnGo?: number
+  /** `uci`를 받으면 uciok 대신 onerror를 발생시킨다(멀티스레드 빌드가 뜨지 못하는 환경) */
+  crashOnUci?: boolean
 }
 
 export class FakeWorker implements WorkerLike {
@@ -38,6 +40,10 @@ export class FakeWorker implements WorkerLike {
   private handle(cmd: string) {
     if (this.terminated) return
     if (cmd === 'uci') {
+      if (this.script.crashOnUci) {
+        this.onerror?.(new Error('fake startup crash'))
+        return
+      }
       this.emit('id name FakeFish')
       this.emit('uciok')
     } else if (cmd === 'isready') {

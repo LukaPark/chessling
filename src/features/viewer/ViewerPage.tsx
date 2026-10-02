@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type Dispatch, type SetStateAction } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useEngines } from '../../app/EngineContext'
 import { useStore } from '../../app/StoreContext'
@@ -17,7 +17,7 @@ import { EvalBar } from '../../components/EvalBar'
 import { EvalGraph } from '../../components/EvalGraph'
 import { MoveList } from '../../components/MoveList'
 import { commentsForGame } from '../../engine/comment'
-import { isMultiThreaded } from '../../engine/engines'
+import { isMultiThreaded, subscribeEngineMode } from '../../engine/engines'
 import { terminalScore } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
 import { selectScenes } from '../../quiz/selectScenes'
@@ -223,10 +223,12 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     return [...ucis].map(bestMoveArrow)
   }, [hint, hintUci, lineUci])
 
+  const multiThreaded = useSyncExternalStore(subscribeEngineMode, isMultiThreaded)
+
   return (
     <div className={g.page}>
       <ViewerHeader record={record} onRefresh={onRefresh} onFlip={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
-        {!isMultiThreaded() && <Banner>이 브라우저에서는 엔진이 싱글스레드로 동작해서 분석이 느릴 수 있어요.</Banner>}
+        {!multiThreaded && <Banner>이 브라우저에서는 엔진이 싱글스레드로 동작해서 분석이 느릴 수 있어요.</Banner>}
         {live.error !== null && <Banner tone="warn">엔진을 실행할 수 없어요. 새로고침해 주세요.</Banner>}
       </ViewerHeader>
 

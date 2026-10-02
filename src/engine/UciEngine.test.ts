@@ -157,3 +157,88 @@ describe('UciEngine', () => {
     expect(sent.indexOf('setoption name UCI_Elo value 1400')).toBeGreaterThan(sent.indexOf('stop'))
   })
 })
+
+describe('UciEngine 싱글스레드 대체', () => {
+  type ScriptFor = FakeEngineScript | ((index: number) => FakeEngineScript)
+  const at = (s: ScriptFor, i: number) => (typeof s === 'function' ? s(i) : s)
+
+  function setupFallback(primary: ScriptFor, single: ScriptFor = {}) {
+    const multi: FakeWorker[] = []
+    const singles: FakeWorker[] = []
+    const onFallback = vi.fn()
+    const engine = new UciEngine(
+      () => {
+        const w = new FakeWorker(at(primary, multi.length))
+        multi.push(w)
+        return w
+      },
+      { Threads: 3, Hash: 64 },
+      {
+        factory: () => {
+          const w = new FakeWorker(at(single, singles.length))
+          singles.push(w)
+          return w
+        },
+        options: { Threads: 1 },
+        onFallback,
+      },
+    )
+    return { engine, multi, singles, onFallback }
+  }
+
+  it('첫 준비 전에 크래시하면 대체 워커로 다시 띄우고 옵션을 바꿔 보낸다', async () => {
+    const { engine, multi, singles, onFallback } = setupFallback({ crashOnUci: true })
+    await expect(engine.analyze(START, { depth: 5 })).resolves.toMatchObject({ cancelled: false, bestMove: 'e2e4' })
+    expect(multi).toHaveLength(1)
+    expect(multi[0].terminated).toBe(true)
+    expect(singles).toHaveLength(1)
+    expect(singles[0].sent).toContain('setoption name Threads value 1')
+    expect(singles[0].sent).toContain('setoption name Hash value 64')
+    expect(onFallback).toHaveBeenCalledTimes(1)
+  })
+
+  it('대체는 크래시 재시도 기회를 쓰지 않는다', async () => {
+    const { engine, singles } = setupFallback({ crashOnUci: true }, (i) => (i === 0 ? { crashOnGo: 1 } : {}))
+    // 싱글 워커가 탐색 중 한 번 죽어도 재시도로 살아난다.
+    await expect(engine.analyze(START, { depth: 5 })).resolves.toMatchObject({ cancelled: false })
+    expect(singles).toHaveLength(2)
+  })
+
+  it('setOptions도 대체 워커에서 끝난다', async () => {
+    const { engine, singles } = setupFallback({ crashOnUci: true })
+    await expect(engine.bestMove(START, { movetime: 100, elo: 1500 })).resolves.toBe('e2e4')
+    expect(singles).toHaveLength(1)
+    expect(singles[0].sent).toContain('setoption name UCI_Elo value 1500')
+  })
+
+  it('한 번 대체하면 이후 크래시에도 싱글을 유지한다', async () => {
+    const { engine, multi, singles } = setupFallback({ crashOnUci: true }, (i) => (i === 0 ? { crashOnGo: 2 } : {}))
+    await engine.analyze(START, { depth: 5 })
+    await engine.analyze(START, { depth: 5 })
+    expect(multi).toHaveLength(1)
+    expect(singles).toHaveLength(2)
+  })
+
+  it('준비된 뒤의 크래시는 대체하지 않고 같은 팩토리로 재시도한다', async () => {
+    const { engine, multi, singles, onFallback } = setupFallback((i) => (i === 0 ? { crashOnGo: 1 } : {}))
+    await expect(engine.analyze(START, { depth: 5 })).resolves.toMatchObject({ cancelled: false })
+    expect(multi).toHaveLength(2)
+    expect(singles).toHaveLength(0)
+    expect(onFallback).not.toHaveBeenCalled()
+  })
+
+  it('대체 워커도 시작 전에 죽으면 EngineCrashedError', async () => {
+    const { engine } = setupFallback({ crashOnUci: true }, { crashOnUci: true })
+    await expect(engine.analyze(START, { depth: 5 })).rejects.toBeInstanceOf(EngineCrashedError)
+  })
+
+  it('useFallback은 바깥에서 불러도 다음 워커부터 싱글로 띄운다', async () => {
+    const { engine, multi, singles, onFallback } = setupFallback({})
+    engine.useFallback()
+    engine.useFallback()
+    await engine.analyze(START, { depth: 5 })
+    expect(multi).toHaveLength(0)
+    expect(singles[0].sent).toContain('setoption name Threads value 1')
+    expect(onFallback).toHaveBeenCalledTimes(1)
+  })
+})
