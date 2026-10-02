@@ -21,6 +21,7 @@ vi.mock('../../sources/annotations', () => ({
           plies: [
             { ply: 0, text: '파리 오페라 극장 귀빈석에서 둔 한 판이에요.' },
             { ply: 1, text: '중앙을 차지하며 시작해요.', key: true },
+            { ply: 2, text: '흑도 중앙을 받아요.', guide: ['e5'] },
           ],
         }
       : null,
@@ -135,6 +136,8 @@ describe('ViewerPage', () => {
     expect(screen.getByRole('button', { name: '다음 수' })).toBeDisabled()
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(boardProps.current?.fen).toBe(AFTER_E5)
+    // 퀴즈 중에는 가이드를 그리지 않는다(위 e5 빨간 원이 퀴즈 보드에 남지 않는다)
+    expect(boardProps.current?.shapes ?? []).toEqual([])
     expect(boardProps.current?.movable?.color).toBe('white')
 
     act(() => boardProps.current!.movable!.onMove('g1', 'f3'))

@@ -20,7 +20,7 @@ import { MoveList } from '../../components/MoveList'
 import { commentsForGame } from '../../engine/comment'
 import { guideFor } from '../../engine/comment/guide'
 import { isMultiThreaded } from '../../engine/engines'
-import { terminalScore } from '../../engine/review'
+import { terminalScore, type ReviewedPosition } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
 import { selectScenes } from '../../quiz/selectScenes'
 import type { QuizScene } from '../../quiz/types'
@@ -43,6 +43,8 @@ import { useReview } from './useReview'
 import { useSwipe } from './useSwipe'
 import { ViewerControls } from './ViewerControls'
 import { ViewerHeader } from './ViewerHeader'
+
+const NO_POSITIONS: ReviewedPosition[] = []
 
 export function ViewerPage() {
   const { pathname } = useLocation()
@@ -150,7 +152,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     onNext: () => manualSetPly((p) => Math.min(last, p + 1)),
   })
 
-  const positions = review.status === 'done' ? review.review.positions : review.status === 'running' ? review.partial : []
+  const positions = review.status === 'done' ? review.review.positions : review.status === 'running' ? review.partial : NO_POSITIONS
   const labels = review.status === 'done' ? review.review.labels : undefined
   const generated = useMemo(
     () =>
@@ -221,14 +223,14 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   const hintUci = positions[ply]?.best ?? live.lines[0]?.pv[0] ?? null
   const lineUci = linesOpen && !reviewing ? live.lines[0]?.pv[0] : undefined
   const guide = useMemo(() => {
-    if (!guideOn || ply === 0) return []
+    if (!guideOn || ply === 0 || quizzing) return []
     return pickGuide({
       authored: authored?.guide,
       auto: () => guideFor({ plies, positions, labels: labels ?? [], index: ply, seed: gameKey }),
       sceneStart: sceneHere !== null,
       hidden: hiddenAnswers(scenes, ply),
     })
-  }, [guideOn, ply, authored, plies, positions, labels, gameKey, sceneHere, scenes])
+  }, [guideOn, ply, authored, plies, positions, labels, gameKey, sceneHere, scenes, quizzing])
   const shapes = useMemo(() => {
     const ucis = new Set<string>()
     if (hint && hintUci) ucis.add(hintUci.slice(0, 4))

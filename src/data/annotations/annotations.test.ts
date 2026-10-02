@@ -91,6 +91,10 @@ describe('validateAnnotations', () => {
       expect(guideErrors(withGuide(3, ['f3e6']))[0]).toContain('닿지 않음')
       expect(guideErrors(withGuide(3, ['?g1g3']))[0]).toContain('둘 수 없는 수')
     })
+    it('빨간 원은 기물이 있는 칸이어야 한다', () => {
+      expect(guideErrors(withGuide(3, ['e5']))).toEqual([])
+      expect(guideErrors(withGuide(3, ['e6']))[0]).toContain('칸이 비어 있음')
+    })
     it('4개 이상이거나 시작 포지션이면 오류', () => {
       expect(guideErrors(withGuide(3, ['f3e5', 'e5', 'e4', 'f3d4'])).some((e) => e.includes('최대 3개'))).toBe(true)
       expect(guideErrors(withGuide(0, ['e4']))[0]).toContain('시작 포지션')

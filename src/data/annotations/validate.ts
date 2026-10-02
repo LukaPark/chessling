@@ -105,7 +105,10 @@ function guideErrors(ply: number, list: string[], before: string, after: string)
       out.push(`${ply}수: 가이드 표기를 읽을 수 없음 "${t}"`)
       continue
     }
-    if (!g.from) continue
+    if (!g.from) {
+      if (g.kind === 'danger' && !new Chess(after).get(g.to)) out.push(`${ply}수: 가이드 "${t}" 칸이 비어 있음`)
+      continue
+    }
     if (g.kind === 'missed') {
       const legal = new Chess(before).moves({ verbose: true }).some((m) => m.from === g.from && m.to === g.to)
       if (!legal) out.push(`${ply}수: 가이드 "${t}"는 직전 포지션에서 둘 수 없는 수`)

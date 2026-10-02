@@ -72,6 +72,20 @@ describe('guideFor', () => {
     expect(g).toContainEqual({ kind: 'danger', from: 'd8', to: 'd1' })
   })
 
+  it('노림: 방어가 있어도 움직인 기물보다 비싼 기물이면 화살표', () => {
+    // e5 폰이 c7 폰이 받치는 d6 나이트를 공격
+    const plies = pliesFrom('4k3/2p5/3n4/8/4P3/8/8/4K3 w - - 0 1', ['e5'])
+    expect(guideFor(input(plies, 1))).toEqual([{ kind: 'attack', from: 'e5', to: 'd6' }])
+  })
+
+  it('포크가 있으면 노림 화살표를 더하지 않는다', () => {
+    // c7 나이트가 룩·킹을 포크, 방어가 있는 e6 폰도 닿지만 목표가 아님
+    const plies = pliesFrom('r3k3/3p4/4p3/1N6/8/8/8/4K3 w - - 0 1', ['Nc7+'])
+    const g = guideFor(input(plies, 1))
+    expect(g).toHaveLength(2)
+    expect(g.map((s) => s.to).sort()).toEqual(['a8', 'e8'])
+  })
+
   it(`최대 ${GUIDE_MAX}개까지만`, () => {
     // d6 나이트가 킹·퀸·룩 두 개를 함께 공격
     const plies = pliesFrom('2q1k3/1r3r2/8/1N6/8/8/8/4K3 w - - 0 1', ['Nd6+'])

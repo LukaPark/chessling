@@ -8,6 +8,7 @@ test('보드 가이드: 핵심 장면에 화살표가 그려지고, 토글로 �
   for (let i = 0; i < 13; i++) await page.keyboard.press('ArrowRight') // 7. Qb3(핵심 장면)
 
   const arrows = page.locator('cg-container svg.cg-shapes line')
+  // 2개: opera-game.json 13수(7. Qb3)의 손으로 쓴 guide ["b3b7","c4f7"]
   await expect(arrows).toHaveCount(2)
 
   const toggle = card.getByRole('button', { name: '가이드' })
