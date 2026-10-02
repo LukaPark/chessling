@@ -39,6 +39,15 @@ function analysisEngine() {
 }
 
 describe('ViewerPage', () => {
+  it('오프닝 이름을 보여 주고, 이름이 바뀌는 수에 배지와 설명을 붙인다', async () => {
+    renderRoute('/game/classic/opera-game')
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    for (let i = 0; i < 4; i++) fireEvent.keyDown(window, { key: 'ArrowRight' }) // 1.e4 e5 2.Nf3 d6
+    expect(await within(card).findByText(/필리도르 디펜스/, {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(within(card).getByText('오프닝')).toBeInTheDocument()
+    expect(within(card).getByText(/e5 폰을 단단히 받치는/)).toBeInTheDocument()
+  })
+
   it('명경기는 리뷰 전에도 해설과 핵심 장면 표시를 보여 준다', async () => {
     renderRoute('/game/classic/opera-game')
     const card = await screen.findByRole('region', { name: '이번 수 판정' })

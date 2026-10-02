@@ -47,3 +47,5 @@ export const moreButton = style({
 })
 /** 퀴즈 시작 버튼 줄: 카드 폭으로 늘리지 않는다 */
 export const quizRow = style({ display: 'flex', justifyContent: 'start' })
+export const openingName = style({ color: vars.color.muted, fontSize: fontSize.control, wordBreak: 'keep-all', overflowWrap: 'anywhere' })
+export const badges = style({ display: 'flex', flexWrap: 'wrap', gap: space[2] })

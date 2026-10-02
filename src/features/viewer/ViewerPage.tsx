@@ -20,6 +20,7 @@ import { commentsForGame } from '../../engine/comment'
 import { isMultiThreaded } from '../../engine/engines'
 import { terminalScore } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
+import { cardOpening } from '../../openings/view'
 import { selectScenes } from '../../quiz/selectScenes'
 import type { QuizScene } from '../../quiz/types'
 import { queryKeys } from '../../sources'
@@ -35,6 +36,7 @@ import { EvaluationCancelled, type QuizFinish } from './quiz/useQuiz'
 import { useAnnotations } from './useAnnotations'
 import { ReviewSummary } from './ReviewSummary'
 import { useGame } from './useGame'
+import { useOpening } from './useOpening'
 import { useLiveAnalysis } from './useLiveAnalysis'
 import { useReview } from './useReview'
 import { useSwipe } from './useSwipe'
@@ -97,6 +99,8 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   const fen = plies[ply].fen
   const annotations = useAnnotations(gameRef)
   const authored = annotations?.plies.find((a) => a.ply === ply) ?? null
+  const openingTrack = useOpening(plies)
+  const opening = openingTrack ? cardOpening(openingTrack, plies, ply) : null
   useEffect(() => setHint(false), [ply])
 
   const startFork = async ({ playerColor, engineElo }: { playerColor: Color; engineElo: number }) => {
@@ -259,6 +263,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
               hint={hint}
               hintUci={hintUci}
               comment={comment}
+              opening={opening}
               // 리뷰 중에는 엔진을 리뷰가 쓰므로 퀴즈를 열지 않는다
               quiz={sceneHere && !reviewing ? { done: results.has(sceneHere.id), onStart: () => setActiveScene(sceneHere) } : null}
             />
