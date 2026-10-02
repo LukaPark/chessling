@@ -14,14 +14,19 @@ export interface ForkDialogProps {
   onCancel: () => void
   pending?: boolean
   error?: boolean
+  /** 기본: "여기서 분기해서 두기" */
+  title?: string
+  /** 대화상자 위쪽 안내 한 줄 */
+  note?: string
 }
 
-export function ForkDialog({ defaultColor, onConfirm, onCancel, pending = false, error = false }: ForkDialogProps) {
+export function ForkDialog({ defaultColor, onConfirm, onCancel, pending = false, error = false, title = '여기서 분기해서 두기', note }: ForkDialogProps) {
   const [color, setColor] = useState<Color>(defaultColor)
   const [elo, setElo] = useState(DEFAULT_ELO)
   return (
-    <Dialog title="여기서 분기해서 두기" onClose={onCancel}>
+    <Dialog title={title} onClose={onCancel}>
       <div className={s.dialogBody}>
+        {note && <p>{note}</p>}
         <Segmented
           legend="내 색"
           name="fork-color"

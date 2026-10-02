@@ -6,7 +6,7 @@ import { useStore } from '../../app/StoreContext'
 import { createFork } from '../../chess/fork'
 import { moveNumberOf } from '../../chess/moveNumber'
 import { pathToRef, refKey, type GameRef } from '../../chess/gameRef'
-import { isCheck, turnOf } from '../../chess/pgn'
+import { isCheck, pvToSan, turnOf } from '../../chess/pgn'
 import type { Color, GameRecord, Ply } from '../../chess/types'
 import { Banner } from '../../components/Banner'
 import { Board } from '../../components/Board'
@@ -21,7 +21,7 @@ import { isMultiThreaded } from '../../engine/engines'
 import { terminalScore } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
 import type { OpeningAt } from '../../openings/types'
-import { cardOpening } from '../../openings/view'
+import { cardOpening, openingLabel, practiceLine } from '../../openings/view'
 import { selectScenes } from '../../quiz/selectScenes'
 import type { QuizScene } from '../../quiz/types'
 import { queryKeys } from '../../sources'
@@ -78,7 +78,8 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   const [linesOpen, setLinesOpen] = useState(false)
   const [movesOpen, setMovesOpen] = useState(false)
   const [hint, setHint] = useState(false)
-  const [forking, setForking] = useState(false)
+  const [forkTarget, setForkTarget] = useState<ForkTarget | null>(null)
+  const forking = forkTarget !== null
   const [forkError, setForkError] = useState(false)
   const [forkPending, setForkPending] = useState(false)
   const forkBusy = useRef(false)
@@ -106,15 +107,8 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   useEffect(() => setHint(false), [ply])
 
   const startFork = async ({ playerColor, engineElo }: { playerColor: Color; engineElo: number }) => {
-    if (forkBusy.current) return
-    const fork = createFork({
-      origin: gameRef,
-      originPly: ply,
-      startFen: fen,
-      playerColor,
-      engineElo,
-      title: `${record.white.name} vs ${record.black.name} · ${moveNumberOf(plies[0].fen, ply).number}수째에서 분기`,
-    })
+    if (forkBusy.current || !forkTarget) return
+    const fork = createFork({ origin: gameRef, originPly: forkTarget.originPly, startFen: forkTarget.startFen, playerColor, engineElo, title: forkTarget.title })
     forkBusy.current = true
     setForkPending(true)
     setForkError(false)
@@ -129,13 +123,31 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     await qc.invalidateQueries({ queryKey: ['forks'] })
     navigate(`/play/${fork.id}`)
   }
-
-  const practiceOpening = (_at: OpeningAt) => setForking(true)
+  const forkHere = (at: number, note?: string): ForkTarget => ({
+    startFen: plies[at].fen,
+    originPly: at,
+    title: `${record.white.name} vs ${record.black.name} · ${moveNumberOf(plies[0].fen, at).number}수째에서 분기`,
+    note,
+  })
+  const practiceOpening = (at: OpeningAt) => {
+    const line = practiceLine(at)
+    const sans = line.san.map((san, i) => (i % 2 === 0 ? `${i / 2 + 1}.${san}` : san)).join(' ')
+    setForkTarget({
+      startFen: line.endFen,
+      originPly: at.ply,
+      title: `${openingLabel(at).split(' · ').slice(1).join(' · ')} 연습`,
+      dialogTitle: '이 수순으로 연습하기',
+      note: `대표 수순: ${sans}`,
+    })
+  }
   const branchAtDeviation = () => {
-    if (openingTrack?.deviation) {
-      manualSetPly(openingTrack.deviation.ply - 1)
-      setForking(true)
-    }
+    const dev = openingTrack?.deviation
+    if (!dev) return
+    const at = dev.ply - 1
+    const { number, white } = moveNumberOf(plies[0].fen, dev.ply)
+    const theory = dev.theory.map((u) => `${number}${white ? '.' : '...'}${pvToSan(plies[at].fen, [u], 1)[0]}`).join(' 또는 ')
+    manualSetPly(at)
+    setForkTarget(forkHere(at, `이론 수: ${theory}`))
   }
 
   const { state: review, start: startReview } = useReview(gameRef, plies, record.result !== '*')
@@ -309,7 +321,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
         last={last}
         onGo={go}
         onOpenMoves={() => setMovesOpen(true)}
-        onFork={() => setForking(true)}
+        onFork={() => setForkTarget(forkHere(ply))}
         forkDisabled={terminal !== null}
         hint={hint}
         onHint={() => setHint((h) => !h)}
@@ -347,17 +359,28 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
           />
         </Dialog>
       )}
-      {forking && (
+      {forkTarget && (
         <ForkDialog
-          defaultColor={turnOf(fen) === 'w' ? 'white' : 'black'}
+          title={forkTarget.dialogTitle}
+          note={forkTarget.note}
+          defaultColor={turnOf(forkTarget.startFen) === 'w' ? 'white' : 'black'}
           pending={forkPending}
           error={forkError}
-          onCancel={() => setForking(false)}
+          onCancel={() => setForkTarget(null)}
           onConfirm={(o) => void startFork(o)}
         />
       )}
     </div>
   )
+}
+
+interface ForkTarget {
+  startFen: string
+  originPly: number
+  /** 분기 레코드 제목 */
+  title: string
+  dialogTitle?: string
+  note?: string
 }
 
 function useKeyboardNav(last: number, setPly: Dispatch<SetStateAction<number>>, enabled: boolean) {
