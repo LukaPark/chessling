@@ -100,6 +100,11 @@ describe('validateAnnotations', () => {
       a.scenes = [{ id: 's', startPly: 2, side: 'w', prompt: '둬 보세요.', source: 'authored', steps: [{ answerUci: 'g1f3' }] }]
       expect(validateAnnotations(a, plies).some((e) => e.includes('장면 s') && e.includes('가이드'))).toBe(true)
     })
+    it('장면 시작 한 수 전(ply-1)이나 두 수 전 가이드가 첫 정답을 보여 줘도 오류', () => {
+      const a = withGuide(1, ['g1f3'])
+      a.scenes = [{ id: 's', startPly: 2, side: 'w', prompt: '둬 보세요.', source: 'authored', steps: [{ answerUci: 'g1f3' }] }]
+      expect(validateAnnotations(a, plies).some((e) => e.includes('장면 s') && e.includes('1수') && e.includes('가이드'))).toBe(true)
+    })
   })
 })
 

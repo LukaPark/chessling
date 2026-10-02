@@ -32,7 +32,7 @@ import { Disclosure } from '../../ui/Disclosure'
 import { NotFound } from '../NotFound'
 import { ForkDialog } from '../play/ForkDialog'
 import { JudgmentCard } from './JudgmentCard'
-import { pickGuide } from './pickGuide'
+import { hiddenAnswers, pickGuide } from './pickGuide'
 import { ActiveQuiz } from './quiz/ActiveQuiz'
 import { EvaluationCancelled, type QuizFinish } from './quiz/useQuiz'
 import { useAnnotations } from './useAnnotations'
@@ -226,8 +226,9 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
       authored: authored?.guide,
       auto: () => guideFor({ plies, positions, labels: labels ?? [], index: ply, seed: gameKey }),
       sceneStart: sceneHere !== null,
+      hidden: hiddenAnswers(scenes, ply),
     })
-  }, [guideOn, ply, authored, plies, positions, labels, gameKey, sceneHere])
+  }, [guideOn, ply, authored, plies, positions, labels, gameKey, sceneHere, scenes])
   const shapes = useMemo(() => {
     const ucis = new Set<string>()
     if (hint && hintUci) ucis.add(hintUci.slice(0, 4))

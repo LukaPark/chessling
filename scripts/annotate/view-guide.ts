@@ -7,7 +7,7 @@ import { pgnToPlies } from '../../src/chess/pgn'
 import { guideFor } from '../../src/engine/comment/guide'
 import type { MoveLabel } from '../../src/engine/judge'
 import type { ReviewedPosition } from '../../src/engine/review'
-import { pickGuide } from '../../src/features/viewer/pickGuide'
+import { hiddenAnswers, pickGuide } from '../../src/features/viewer/pickGuide'
 import type { Annotations } from '../../src/sources/annotations'
 import { getClassic } from '../../src/sources/classics'
 import { guideToken } from '../../src/sources/guideNotation'
@@ -28,9 +28,10 @@ for (const p of a.plies) {
   console.log(`[${p.ply}${p.key ? ' 핵심' : ''}${starts.has(p.ply) ? ' 장면시작' : ''}] ${moveTitle(plies, p.ply)}`)
   console.log(`  해설: ${p.text}`)
   console.log(`  자동: ${JSON.stringify(auto)}${p.guide ? `   지정: ${JSON.stringify(p.guide)}` : ''}`)
-  // 장면 시작에서는 뷰어가 자동 가이드를 초록 화살표만 남긴다. 실제로 그려질 것을 따로 보여 준다
-  if (starts.has(p.ply)) {
-    const shown = pickGuide({ authored: p.guide, auto: () => autoShapes, sceneStart: true }).map(guideToken)
-    console.log(`  (장면시작${p.guide ? '' : ': 초록만'}) 표시: ${JSON.stringify(shown)}`)
+  // 뷰어가 실제로 그리는 것: 장면 시작에서는 자동 가이드가 노림 화살표만 남고, 장면 시작 2수 전부터는 첫 정답 화살표를 뺀다
+  const near = a.scenes.some((s) => p.ply >= s.startPly - 2 && p.ply <= s.startPly)
+  if (near) {
+    const shown = pickGuide({ authored: p.guide, auto: () => autoShapes, sceneStart: starts.has(p.ply), hidden: hiddenAnswers(a.scenes, p.ply) }).map(guideToken)
+    console.log(`  (장면 근처${starts.has(p.ply) && !p.guide ? ': 초록만' : ''}) 표시: ${JSON.stringify(shown)}`)
   }
 }

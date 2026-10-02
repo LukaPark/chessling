@@ -71,9 +71,11 @@ export function validateAnnotations(a: Annotations, plies: Ply[]): string[] {
       continue
     }
     const first = s.steps[0]?.answerUci.slice(0, 4)
-    const startGuide = byPly.get(s.startPly)?.guide ?? []
-    if (first && startGuide.some((t) => { const g = parseGuideToken(t); return g?.from !== undefined && g.from + g.to === first })) {
-      errors.push(`장면 ${s.id}: 시작 포지션 가이드가 첫 정답을 보여 줌`)
+    for (const ply of [s.startPly - 2, s.startPly - 1, s.startPly]) {
+      const guide = byPly.get(ply)?.guide ?? []
+      if (first && guide.some((t) => { const g = parseGuideToken(t); return g?.from !== undefined && g.from + g.to === first })) {
+        errors.push(`장면 ${s.id}: ${ply}수 가이드가 첫 정답을 보여 줌`)
+      }
     }
     const c = new Chess(plies[s.startPly].fen)
     if (c.turn() !== s.side) errors.push(`장면 ${s.id}: 둘 쪽이 맞지 않음`)

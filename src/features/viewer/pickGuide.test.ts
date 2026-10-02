@@ -11,14 +11,21 @@ const AUTO: GuideShape[] = [
 describe('pickGuide', () => {
   it('직접 지정이 있으면 그것만 쓰고 자동 계산을 하지 않는다', () => {
     const auto = vi.fn(() => AUTO)
-    expect(pickGuide({ authored: ['b3b7'], auto, sceneStart: false })).toEqual([{ kind: 'attack', from: 'b3', to: 'b7' }])
-    expect(pickGuide({ authored: [], auto, sceneStart: false })).toEqual([])
+    expect(pickGuide({ authored: ['b3b7'], auto, sceneStart: false, hidden: [] })).toEqual([{ kind: 'attack', from: 'b3', to: 'b7' }])
+    expect(pickGuide({ authored: [], auto, sceneStart: false, hidden: [] })).toEqual([])
     expect(auto).not.toHaveBeenCalled()
   })
   it('직접 지정이 없으면 자동', () => {
-    expect(pickGuide({ authored: undefined, auto: () => AUTO, sceneStart: false })).toEqual(AUTO)
+    expect(pickGuide({ authored: undefined, auto: () => AUTO, sceneStart: false, hidden: [] })).toEqual(AUTO)
   })
   it('퀴즈 장면 시작 포지션의 자동 가이드는 노림 화살표만 남긴다', () => {
-    expect(pickGuide({ authored: undefined, auto: () => AUTO, sceneStart: true })).toEqual([{ kind: 'attack', from: 'd3', to: 'h7' }])
+    expect(pickGuide({ authored: undefined, auto: () => AUTO, sceneStart: true, hidden: [] })).toEqual([{ kind: 'attack', from: 'd3', to: 'h7' }])
+  })
+  it('숨길 정답 화살표는 직접 지정에서도 자동에서도 뺀다', () => {
+    expect(pickGuide({ authored: ['b3b7', 'e4'], auto: () => AUTO, sceneStart: false, hidden: ['b3b7'] })).toEqual([{ kind: 'danger', to: 'e4' }])
+    expect(pickGuide({ authored: undefined, auto: () => AUTO, sceneStart: false, hidden: ['e2e4'] })).toEqual([AUTO[1], AUTO[2]])
+  })
+  it('칸 표시(from 없음)는 숨기지 않는다', () => {
+    expect(pickGuide({ authored: undefined, auto: () => AUTO, sceneStart: false, hidden: ['f7f7', 'e2e4', 'd3h7'] })).toEqual([AUTO[2]])
   })
 })
