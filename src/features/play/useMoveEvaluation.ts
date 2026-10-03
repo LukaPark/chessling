@@ -24,7 +24,9 @@ export type LatestEvaluation =
     }
 
 interface Entry {
-  /** 판정한 뒤의 포지션. 무르고 다른 수를 두면 맞지 않으므로 버린다 */
+  /** 판정한 수(두기 전 포지션 + 수 + 둔 뒤 포지션). 무르고 다른 수순으로 같은 포지션에 와도(전위) 다른 수로 본다 */
+  beforeFen: string
+  uci: string
   fen: string
   /** 탐색이 취소됐거나 엔진 오류였다 */
   failed: boolean
@@ -44,7 +46,7 @@ function latestPlayerPly(plies: Ply[], player: Color): number | null {
 
 function validEntry(entries: Map<number, Entry>, plies: Ply[], i: number): Entry | null {
   const e = entries.get(i)
-  return e && plies[i]?.fen === e.fen ? e : null
+  return e && i >= 1 && plies[i]?.fen === e.fen && plies[i].uci === e.uci && plies[i - 1].fen === e.beforeFen ? e : null
 }
 
 /**
@@ -56,11 +58,14 @@ export function useMoveEvaluation({
   plies,
   playerColor,
   enabled,
+  over,
   seed,
 }: {
   plies: Ply[]
   playerColor: Color
   enabled: boolean
+  /** 대국이 끝났으면(기권·무승부 포함) 다음 수를 위한 미리 분석을 하지 않는다 */
+  over: boolean
   seed: string
 }): { latest: LatestEvaluation | null; labels: (MoveLabel | null)[] } {
   const { analysis } = useEngines()
@@ -70,6 +75,11 @@ export function useMoveEvaluation({
   // 포지션 분석 결과는 FEN으로 캐시한다. 무르고 같은 수를 다시 두면 엔진을 다시 돌리지 않는다.
   const cache = useRef(new Map<string, ReviewedPosition>())
   const inflight = useRef(new Map<string, Promise<ReviewedPosition | null>>())
+  // 이번 페이지 세션에 둔 수만 평가한다(새로고침하면 지워진다는 설계). 인덱스가 이 값 이상인 수가 이번 세션의 수이고,
+  // 무르기로 그보다 앞으로 돌아가면 그 지점부터 다시 센다.
+  const [sessionFrom, setSessionFrom] = useState(plies.length)
+  if (plies.length < sessionFrom) setSessionFrom(plies.length)
+  const floor = Math.min(sessionFrom, plies.length)
 
   // 무르기로 사라진 수의 판정을 지운다
   useEffect(() => {
@@ -112,20 +122,21 @@ export function useMoveEvaluation({
     }
 
     const run = async () => {
-      const target = latestPlayerPly(plies, playerColor)
+      const latest = latestPlayerPly(plies, playerColor)
+      const target = latest !== null && latest >= floor ? latest : null
       if (target !== null && !validEntry(entriesRef.current, plies, target)) {
         const before = await position(plies[target - 1].fen)
         const after = before && isActive() ? await position(plies[target].fen) : null
         if (!isActive()) return
         const entry = before && after ? judge(plies, target, before, after) : null
-        setEntries((prev) => new Map(prev).set(target, entry ?? failedEntry(plies[target].fen)))
+        setEntries((prev) => new Map(prev).set(target, entry ?? failedEntry(plies, target)))
       }
       // 내 차례면 지금 포지션을 미리 분석해 둔다
       const last = plies[plies.length - 1]
-      if (isActive() && turnOf(last.fen) === (playerColor === 'white' ? 'w' : 'b')) await position(last.fen)
+      if (isActive() && !over && turnOf(last.fen) === (playerColor === 'white' ? 'w' : 'b')) await position(last.fen)
     }
 
-    /** 판정과 코멘트. 상대 수의 판정(놓침 판단용)은 캐시에 두 포지션이 다 있을 때만 계산한다 */
+    /** 판정과 코멘트. 놓침(miss)은 상대 수 앞뒤 포지션이 캐시에 있어야 가릴 수 있다(없으면 previousLabel은 null) */
     const judge = (plies: Ply[], i: number, before: ReviewedPosition, after: ReviewedPosition): Entry => {
       const positions: ReviewedPosition[] = []
       positions[i - 1] = before
@@ -148,7 +159,7 @@ export function useMoveEvaluation({
       const mated = after.legalMoves === 0 && 'cp' in after.score && after.score.cp !== 0
       const better = label && !GOOD_ENOUGH.has(label) && !mated && before.best && before.best !== played ? before.best : null
       return {
-        fen: plies[i].fen,
+        ...moveOf(plies, i),
         failed: false,
         label,
         betterUci: better,
@@ -161,7 +172,7 @@ export function useMoveEvaluation({
     return () => {
       active = false
     }
-  }, [plies, playerColor, enabled, seed, analysis])
+  }, [plies, playerColor, enabled, over, floor, seed, analysis])
 
   // 끄거나 페이지를 떠나면 진행 중인 평가 탐색을 멈춘다
   useEffect(() => {
@@ -173,7 +184,7 @@ export function useMoveEvaluation({
     if (!enabled) return { latest: null, labels: [] }
     const labels: (MoveLabel | null)[] = plies.map((_, i) => validEntry(entries, plies, i)?.label ?? null)
     const target = latestPlayerPly(plies, playerColor)
-    if (target === null) return { latest: null, labels }
+    if (target === null || target < floor) return { latest: null, labels }
     const e = validEntry(entries, plies, target)
     if (!e) return { latest: { index: target, status: 'pending' }, labels }
     if (e.failed) return { latest: null, labels }
@@ -182,9 +193,13 @@ export function useMoveEvaluation({
       latest: { index: target, status: 'done', label: e.label, betterUci: e.betterUci, betterSan, comment: e.comment },
       labels,
     }
-  }, [enabled, entries, plies, playerColor])
+  }, [enabled, entries, plies, playerColor, floor])
 }
 
-function failedEntry(fen: string): Entry {
-  return { fen, failed: true, label: null, betterUci: null, comment: null, keys: [] }
+function moveOf(plies: Ply[], i: number): Pick<Entry, 'beforeFen' | 'uci' | 'fen'> {
+  return { beforeFen: plies[i - 1].fen, uci: plies[i].uci ?? '', fen: plies[i].fen }
+}
+
+function failedEntry(plies: Ply[], i: number): Entry {
+  return { ...moveOf(plies, i), failed: true, label: null, betterUci: null, comment: null, keys: [] }
 }
