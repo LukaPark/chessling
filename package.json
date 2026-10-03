@@ -22,6 +22,7 @@
     "annotate:preview": "tsx scripts/annotate/preview-comments.ts",
     "annotate:view": "tsx scripts/annotate/view-facts.ts",
     "annotate:probe": "tsx scripts/annotate/probe-moves.ts",
+    "annotate:guide": "tsx scripts/annotate/view-guide.ts",
     "openings:build": "tsx scripts/openings/build.ts",
     "openings:select": "tsx scripts/openings/select.ts"
   },

@@ -1,4 +1,4 @@
-import { Lightbulb, Check } from 'lucide-react'
+import { Lightbulb, Check, MoveUpRight } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { moveTitle } from '../../chess/moveNumber'
@@ -13,6 +13,7 @@ import * as v from '../../styles/features/viewer.css'
 import { visuallyHidden } from '../../ui/a11y.css'
 import { cx } from '../../ui/cx'
 import { Badge } from '../../ui/Badge'
+import { Button } from '../../ui/Button'
 import { Icon } from '../../ui/Icon'
 import { SPRING } from '../../ui/motion'
 import { useDebounced } from '../../ui/useDebounced'
@@ -31,6 +32,7 @@ export function JudgmentCard({
   comment,
   opening,
   quiz,
+  guide,
 }: {
   plies: Ply[]
   ply: number
@@ -43,6 +45,8 @@ export function JudgmentCard({
   opening?: CardOpening | null
   /** 이 포지션에서 시작하는 퀴즈 장면이 있을 때 */
   quiz?: { done: boolean; onStart: () => void } | null
+  /** 보드 가이드 토글. 시작 포지션에서는 없다 */
+  guide?: { on: boolean; onToggle: () => void } | null
 }) {
   const data = review.status === 'done' ? review.review : review.status === 'running' && review.partial.length > ply ? buildReview(plies.slice(0, review.partial.length), review.partial, REVIEW_DEPTH) : null
   const label = data && ply > 0 ? data.labels[ply] : null
@@ -78,9 +82,14 @@ export function JudgmentCard({
       {opening?.summary && <CommentText key={`opening-${ply}`} text={opening.summary} />}
       {opening?.deviation && <p className={v.detail}>{opening.deviation}</p>}
       {comment && <CommentText key={ply} text={comment.text} />}
-      {quiz && (
+      {(quiz || guide) && (
         <div className={v.quizRow}>
-          <QuizButton done={quiz.done} onStart={quiz.onStart} />
+          {quiz && <QuizButton done={quiz.done} onStart={quiz.onStart} />}
+          {guide && (
+            <Button tone="secondary" size="sm" icon={MoveUpRight} aria-pressed={guide.on} onClick={guide.onToggle}>
+              가이드
+            </Button>
+          )}
         </div>
       )}
       {hint && (

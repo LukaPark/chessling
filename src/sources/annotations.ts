@@ -6,6 +6,8 @@ export interface AnnotatedPly {
   text: string
   /** 핵심 장면 */
   key?: boolean
+  /** 보드 가이드(짧은 표기, guideNotation.ts). 있으면 자동 계산 대신 이것만 그린다. [] = 가이드 없음 */
+  guide?: string[]
 }
 
 export interface Annotations {

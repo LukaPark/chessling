@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { useLocation, useNavigate } from 'react-router'
+import { useGuidePref } from '../../app/guidePref'
 import { useEngines } from '../../app/EngineContext'
 import { useStore } from '../../app/StoreContext'
 import { createFork } from '../../chess/fork'
@@ -10,15 +11,16 @@ import { isCheck, pvToSan, turnOf } from '../../chess/pgn'
 import type { Color, GameRecord, Ply } from '../../chess/types'
 import { Banner } from '../../components/Banner'
 import { Board } from '../../components/Board'
-import { bestMoveArrow } from '../../components/boardShapes'
+import { bestMoveArrow, guideShape } from '../../components/boardShapes'
 import { EngineLines } from '../../components/EngineLines'
 import { ErrorView } from '../../components/ErrorView'
 import { EvalBar } from '../../components/EvalBar'
 import { EvalGraph } from '../../components/EvalGraph'
 import { MoveList } from '../../components/MoveList'
 import { commentsForGame } from '../../engine/comment'
+import { guideFor } from '../../engine/comment/guide'
 import { isMultiThreaded } from '../../engine/engines'
-import { terminalScore } from '../../engine/review'
+import { terminalScore, type ReviewedPosition } from '../../engine/review'
 import type { Evaluate } from '../../quiz/grade'
 import type { OpeningAt } from '../../openings/types'
 import { cardOpening, hasOpening, practiceLine, practiceTitle } from '../../openings/view'
@@ -33,6 +35,7 @@ import { NotFound } from '../NotFound'
 import { ForkDialog } from '../play/ForkDialog'
 import { JudgmentCard } from './JudgmentCard'
 import { OpeningPanel } from './OpeningPanel'
+import { hiddenAnswers, pickGuide } from './pickGuide'
 import { ActiveQuiz } from './quiz/ActiveQuiz'
 import { EvaluationCancelled, type QuizFinish } from './quiz/useQuiz'
 import { useAnnotations } from './useAnnotations'
@@ -44,6 +47,8 @@ import { useReview } from './useReview'
 import { useSwipe } from './useSwipe'
 import { ViewerControls } from './ViewerControls'
 import { ViewerHeader } from './ViewerHeader'
+
+const NO_POSITIONS: ReviewedPosition[] = []
 
 export function ViewerPage() {
   const { pathname } = useLocation()
@@ -78,6 +83,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   const [linesOpen, setLinesOpen] = useState(false)
   const [movesOpen, setMovesOpen] = useState(false)
   const [hint, setHint] = useState(false)
+  const [guideOn, setGuideOn] = useGuidePref()
   const [forkTarget, setForkTarget] = useState<ForkTarget | null>(null)
   const forking = forkTarget !== null
   const [forkError, setForkError] = useState(false)
@@ -174,7 +180,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     onNext: () => manualSetPly((p) => Math.min(last, p + 1)),
   })
 
-  const positions = review.status === 'done' ? review.review.positions : review.status === 'running' ? review.partial : []
+  const positions = review.status === 'done' ? review.review.positions : review.status === 'running' ? review.partial : NO_POSITIONS
   const labels = review.status === 'done' ? review.review.labels : undefined
   const generated = useMemo(
     () =>
@@ -244,12 +250,23 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
   const score = positions[ply]?.score ?? terminal ?? live.lines[0]?.score ?? null
   const hintUci = positions[ply]?.best ?? live.lines[0]?.pv[0] ?? null
   const lineUci = linesOpen && !reviewing ? live.lines[0]?.pv[0] : undefined
+  const guide = useMemo(() => {
+    if (!guideOn || ply === 0 || quizzing) return []
+    return pickGuide({
+      authored: authored?.guide,
+      auto: () => guideFor({ plies, positions, labels: labels ?? [], index: ply, seed: gameKey }),
+      sceneStart: sceneHere !== null,
+      hidden: hiddenAnswers(scenes, ply),
+    })
+  }, [guideOn, ply, authored, plies, positions, labels, gameKey, sceneHere, scenes, quizzing])
   const shapes = useMemo(() => {
     const ucis = new Set<string>()
-    if (hint && hintUci) ucis.add(hintUci)
-    if (lineUci) ucis.add(lineUci)
-    return [...ucis].map(bestMoveArrow)
-  }, [hint, hintUci, lineUci])
+    if (hint && hintUci) ucis.add(hintUci.slice(0, 4))
+    if (lineUci) ucis.add(lineUci.slice(0, 4))
+    // 힌트·라인과 같은 화살표는 힌트 쪽 하나만 그린다
+    const extra = guide.filter((g) => !(g.from && ucis.has(g.from + g.to))).map(guideShape)
+    return [...[...ucis].map(bestMoveArrow), ...extra]
+  }, [hint, hintUci, lineUci, guide])
 
   return (
     <div className={g.page}>
@@ -290,6 +307,7 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
               opening={opening}
               // 리뷰 중에는 엔진을 리뷰가 쓰므로 퀴즈를 열지 않는다
               quiz={sceneHere && !reviewing ? { done: results.has(sceneHere.id), onStart: () => setActiveScene(sceneHere) } : null}
+              guide={ply > 0 ? { on: guideOn, onToggle: () => setGuideOn(!guideOn) } : null}
             />
             {review.status === 'done' && (
               <ReviewSummary
