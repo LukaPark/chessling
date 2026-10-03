@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MOVE_EVAL_KEY, resetMoveEvalPrefForTest } from '../../app/moveEvalPref'
 import { createFork } from '../../chess/fork'
 import { pgnToPlies } from '../../chess/pgn'
 import { FakeWorker } from '../../engine/testing/fakeWorker'
@@ -13,6 +14,10 @@ import { renderRoute } from '../../test/renderRoute'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
 afterEach(cleanup)
+beforeEach(() => {
+  localStorage.clear()
+  resetMoveEvalPrefForTest()
+})
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -99,6 +104,56 @@ describe('PlayPage', () => {
     await new Promise((r) => setTimeout(r, 400))
     expect(put).toHaveBeenCalledTimes(2)
     expect(screen.getByRole('button', { name: '엔진 세기 (Elo 1600)' })).toBeInTheDocument()
+  })
+
+  it('내 수를 두면 평가 카드·더 나은 수 화살표·기보 기호를 보여주고, 끄면 숨기고 기억한다', async () => {
+    const store = await setupFork()
+    const A3 = 'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1'
+    const analysis = new UciEngine(
+      () =>
+        new FakeWorker({
+          // 점수는 둘 차례 기준. a3 뒤 흑 +1.20 → 백 손실 약 13.6%p로 실수
+          info: (fen) => (fen === START ? ['info depth 14 multipv 1 score cp 30 pv e2e4'] : fen === A3 ? ['info depth 14 multipv 1 score cp 120 pv e7e5'] : []),
+          bestMove: (fen) => (fen === START ? 'e2e4' : 'e7e5'),
+        }),
+    )
+    const play = new UciEngine(() => new FakeWorker({ bestMove: () => 'e7e5' }))
+    renderRoute('/play/f1', { store, engines: { play, analysis } })
+    await screen.findByText('내 차례')
+    expect(screen.queryByRole('region', { name: '수 평가' })).toBeNull()
+
+    act(() => boardProps.current!.movable!.onMove('a2', 'a3'))
+    const card = await screen.findByRole('region', { name: '수 평가' })
+    await waitFor(() => expect(within(card).getByText('실수')).toBeInTheDocument())
+    expect(card).toHaveTextContent('1. a3')
+    expect(card).toHaveTextContent('더 나은 수 e4')
+    expect(boardProps.current!.shapes).toEqual([expect.objectContaining({ orig: 'e2', dest: 'e4' })])
+    const moves = screen.getByTestId('play-moves')
+    expect(within(moves).getByTitle('실수')).toHaveTextContent('a3?')
+
+    const toggle = screen.getByRole('button', { name: '수 평가' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByRole('region', { name: '수 평가' })).toBeNull()
+    expect(within(moves).queryByTitle('실수')).toBeNull()
+    expect(boardProps.current!.shapes ?? []).toEqual([])
+    expect(localStorage.getItem(MOVE_EVAL_KEY)).toBe('0')
+  })
+
+  it('수 평가가 꺼져 있으면 분석 엔진을 쓰지 않는다', async () => {
+    localStorage.setItem(MOVE_EVAL_KEY, '0')
+    const store = await setupFork()
+    const analysis = new UciEngine(() => new FakeWorker())
+    const analyze = vi.spyOn(analysis, 'analyze')
+    const play = new UciEngine(() => new FakeWorker({ bestMove: () => 'e7e5' }))
+    renderRoute('/play/f1', { store, engines: { play, analysis } })
+    await screen.findByText('내 차례')
+    act(() => boardProps.current!.movable!.onMove('e2', 'e4'))
+    await waitFor(async () => expect((await store.forks.get('f1'))?.moves).toEqual(['e2e4', 'e7e5']))
+    expect(screen.getByRole('button', { name: '수 평가' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByRole('region', { name: '수 평가' })).toBeNull()
+    expect(analyze).not.toHaveBeenCalled()
   })
 
   it('없는 분기는 NotFound', async () => {
