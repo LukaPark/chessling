@@ -3,7 +3,7 @@ import { pgnToPlies } from '../chess/pgn'
 import { getClassic } from '../sources/classics'
 import { MATED_CP, type Score } from './classify'
 import { countJudgments } from './judge'
-import { buildReview, REVIEW_VERSION, reviewGame, terminalScore, type ReviewedPosition } from './review'
+import { analyzePosition, buildReview, judgePly, REVIEW_VERSION, reviewGame, terminalScore, type ReviewedPosition } from './review'
 import type { SearchResult } from './UciEngine'
 
 const SCHOLAR = pgnToPlies('1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7# 1-0')
@@ -134,5 +134,48 @@ describe('buildReview 판정 연결', () => {
       legalMoves: 20,
     }))
     expect(buildReview(plies, positions, 14).labels[4]).toBe('great')
+  })
+})
+
+describe('analyzePosition', () => {
+  it('MultiPV 2 결과를 ReviewedPosition으로 만든다', async () => {
+    const engine = fakeEngine()
+    expect(await analyzePosition(engine, SCHOLAR[0].fen, { depth: 12 })).toEqual({
+      score: { cp: 30 },
+      best: 'e2e4',
+      pv: ['e2e4'],
+      second: { cp: 30 },
+      legalMoves: 20,
+    })
+    expect(engine.analyze).toHaveBeenCalledWith(SCHOLAR[0].fen, expect.objectContaining({ depth: 12, multiPv: 2 }))
+  })
+
+  it('끝난 포지션은 엔진 없이 점수를 매긴다', async () => {
+    const engine = fakeEngine()
+    expect(await analyzePosition(engine, SCHOLAR[7].fen)).toEqual({ score: { cp: MATED_CP }, best: null, pv: [], second: null, legalMoves: 0 })
+    expect(engine.analyze).not.toHaveBeenCalled()
+  })
+
+  it('취소되면 null', async () => {
+    const engine = { analyze: vi.fn(async (): Promise<SearchResult> => ({ cancelled: true, bestMove: null, lines: [] })) }
+    expect(await analyzePosition(engine, SCHOLAR[0].fen)).toBeNull()
+  })
+})
+
+describe('judgePly', () => {
+  it('두 포지션만 있어도 buildReview와 같은 판정을 낸다', () => {
+    const plies = pgnToPlies('1. e4 e5 2. Nf3 *')
+    const positions: ReviewedPosition[] = [
+      { score: { cp: 0 }, best: 'e2e4', pv: [], second: null, legalMoves: 20 },
+      { score: { cp: 0 }, best: 'd7d5', pv: [], second: null, legalMoves: 20 },
+      { score: { cp: 300 }, best: 'd2d4', pv: [], second: null, legalMoves: 29 },
+      { score: { cp: 100 }, best: null, pv: [], second: null, legalMoves: 20 },
+    ]
+    const sparse: ReviewedPosition[] = []
+    sparse[2] = positions[2]
+    sparse[3] = positions[3]
+    expect(judgePly(plies, sparse, 3, 'blunder')).toBe('miss')
+    expect(judgePly(plies, sparse, 3, null)).toBe('blunder')
+    expect(judgePly(plies, positions, 0, null)).toBeNull()
   })
 })
