@@ -75,6 +75,10 @@ export function LicensesPage() {
       </p>
       <CreditList items={PIECE_SETS} />
       <p>대국 데이터는 Chess.com 공개 API와 Lichess API에서 가져옵니다. 명경기 소개 글은 Chessling이 직접 작성했습니다.</p>
+      <p>
+        오프닝 이름과 수순은 <a href="https://github.com/lichess-org/chess-openings">lichess-org/chess-openings</a>(CC0)를 썼고,
+        한국어 오프닝 설명은 Chessling이 직접 작성했습니다.
+      </p>
     </div>
   )
 }

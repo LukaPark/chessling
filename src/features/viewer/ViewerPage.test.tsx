@@ -10,6 +10,18 @@ import { renderRoute } from '../../test/renderRoute'
 import { resetGuidePrefForTest } from '../../app/guidePref'
 
 vi.mock('../../components/Board', () => import('../../test/boardMock'))
+// 색인은 ?url 에셋을 fetch로 받는데, jsdom에는 그 에셋이 없다. 실제 JSON을 바로 넘긴다.
+const openingMock = vi.hoisted(() => ({ emptyIndex: false, loaded: 0 }))
+vi.mock('../../sources/openings', () => ({
+  loadOpeningData: async () => {
+    const data = {
+      index: openingMock.emptyIndex ? [] : (await import('../../data/openings/index.json')).default,
+      ko: (await import('../../data/openings/ko.json')).default,
+    }
+    openingMock.loaded++
+    return data
+  },
+}))
 vi.mock('../../sources/annotations', () => ({
   annotationSlugs: () => ['opera-game'],
   loadAnnotations: async (slug: string) =>
@@ -45,6 +57,43 @@ function analysisEngine() {
 }
 
 describe('ViewerPage', () => {
+  it('오프닝 이름을 보여 주고, 이름이 바뀌는 수에 배지와 설명을 붙인다', async () => {
+    renderRoute('/game/classic/opera-game')
+    const card = await screen.findByRole('region', { name: '이번 수 판정' })
+    for (let i = 0; i < 4; i++) fireEvent.keyDown(window, { key: 'ArrowRight' }) // 1.e4 e5 2.Nf3 d6
+    expect(await within(card).findByText(/필리도르 디펜스/, {}, { timeout: 3000 })).toBeInTheDocument()
+    expect(within(card).getByText('오프닝')).toBeInTheDocument()
+    expect(within(card).getByText(/e5 폰을 단단히 받치는/)).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // 3.d4: 아직 같은 필리도르 디펜스
+    await waitFor(() => expect(within(card).queryByText(/e5 폰을 단단히 받치는/)).toBeNull())
+    expect(within(card).getByText(/필리도르 디펜스/)).toBeInTheDocument()
+    expect(within(card).queryByText('오프닝')).toBeNull()
+  })
+
+  it('오프닝 섹션을 펼치면 계열 설명과 연습 버튼이 보인다', async () => {
+    renderRoute('/game/classic/opera-game')
+    await screen.findByRole('heading', { name: /Paul Morphy/ })
+    for (let i = 0; i < 4; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.click(await screen.findByRole('button', { name: '오프닝' }, { timeout: 3000 }))
+    expect(screen.getByText(/^백: d4로 중앙을 열고/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '이 수순으로 연습' })).toBeInTheDocument()
+  })
+
+  it('한 수도 알려진 오프닝에 맞지 않으면 오프닝 섹션을 숨긴다', async () => {
+    openingMock.emptyIndex = true
+    const before = openingMock.loaded
+    try {
+      renderRoute('/game/classic/opera-game')
+      await screen.findByRole('heading', { name: /Paul Morphy/ })
+      await waitFor(() => expect(openingMock.loaded).toBeGreaterThan(before))
+      await act(async () => {})
+      expect(screen.getByRole('button', { name: '엔진 라인' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '오프닝' })).toBeNull()
+    } finally {
+      openingMock.emptyIndex = false
+    }
+  })
+
   it('가이드: 수가 노리는 기물에 화살표를 그리고, 끄면 사라지며 다시 열어도 꺼져 있다', async () => {
     renderRoute('/game/classic/opera-game')
     await screen.findByRole('region', { name: '이번 수 판정' })
@@ -386,5 +435,33 @@ describe('ViewerPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/play\//))
     const [fork] = await store.forks.list()
     expect(fork.title).toMatch(/· 2수째에서 분기$/)
+  })
+
+  it('이 수순으로 연습: 대표 수순 끝 포지션에서 분기한다', async () => {
+    const { router, store } = renderRoute('/game/classic/opera-game')
+    await screen.findByRole('heading', { name: /Paul Morphy/ })
+    for (let i = 0; i < 4; i++) fireEvent.keyDown(window, { key: 'ArrowRight' })
+    fireEvent.click(await screen.findByRole('button', { name: '오프닝' }, { timeout: 3000 }))
+    fireEvent.click(screen.getByRole('button', { name: '이 수순으로 연습' }))
+    const dialog = screen.getByRole('dialog', { name: '이 수순으로 연습하기' })
+    expect(within(dialog).getByText(/^대표 수순: 1\.e4 e5 2\.Nf3 d6/)).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: '시작' }))
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/play\//))
+    const [fork] = await store.forks.list()
+    expect(fork.title).toMatch(/필리도르 디펜스.* 연습$/)
+    expect(fork.startFen).toBe('rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3')
+  })
+
+  it('이탈 지점에서 분기: 이론을 벗어나기 직전 포지션에서 이론 수를 안내한다', async () => {
+    const { store } = renderRoute('/game/classic/opera-game')
+    await screen.findByRole('heading', { name: /Paul Morphy/ })
+    fireEvent.click(await screen.findByRole('button', { name: '오프닝' }, { timeout: 3000 }))
+    fireEvent.click(screen.getByRole('button', { name: '이탈 지점에서 분기' }))
+    const dialog = screen.getByRole('dialog', { name: '여기서 분기해서 두기' })
+    expect(within(dialog).getByText(/^이론 수: /)).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: '시작' }))
+    await waitFor(async () => expect(await store.forks.list()).toHaveLength(1))
+    const [fork] = await store.forks.list()
+    expect(fork.title).toMatch(/수째에서 분기$/)
   })
 })

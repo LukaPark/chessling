@@ -56,6 +56,17 @@ describe('PlayPage', () => {
     const store = await setupFork(plies[4].fen, 4)
     renderRoute('/play/f1', { store })
     expect(await screen.findByText(/^d4 Bg4 dxe5/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '원래 대국의 수순' })).toBeInTheDocument()
+  })
+
+  it('연습용 분기처럼 시작 포지션이 원래 대국과 다르면 원래 대국의 수순을 숨긴다', async () => {
+    // 오페라 게임 4수째는 필리도르 디펜스지만, 시작 포지션은 다른 수순(1.e4 c5)의 끝
+    const sicilian = 'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'
+    const store = await setupFork(sicilian, 4)
+    renderRoute('/play/f1', { store })
+    expect(await screen.findByText('연습용 분기라 원래 대국 수순을 보여 주지 않아요.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '원래 대국의 수순' })).toBeNull()
+    expect(screen.queryByText(/^d4 Bg4 dxe5/)).toBeNull()
   })
 
   it('기보는 누를 수 없는 목록으로 보여준다', async () => {

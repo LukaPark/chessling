@@ -5,6 +5,7 @@ import { moveTitle } from '../../chess/moveNumber'
 import { pvToSan } from '../../chess/pgn'
 import type { Ply } from '../../chess/types'
 import { glyphColor } from '../../components/judgment.css'
+import type { CardOpening } from '../../openings/view'
 import { buildReview, REVIEW_DEPTH } from '../../engine/review'
 import { formatScore } from '../../engine/classify'
 import { JUDGMENT_META, type MoveLabel } from '../../engine/judge'
@@ -29,6 +30,7 @@ export function JudgmentCard({
   hint,
   hintUci,
   comment,
+  opening,
   quiz,
   guide,
 }: {
@@ -39,6 +41,8 @@ export function JudgmentCard({
   hint: boolean
   hintUci: string | null
   comment?: { text: string; key?: boolean } | null
+  /** 지금 수의 오프닝(판별하지 못하면 null) */
+  opening?: CardOpening | null
   /** 이 포지션에서 시작하는 퀴즈 장면이 있을 때 */
   quiz?: { done: boolean; onStart: () => void } | null
   /** 보드 가이드 토글. 시작 포지션에서는 없다 */
@@ -59,7 +63,14 @@ export function JudgmentCard({
 
   return (
     <section aria-label="이번 수 판정" className={v.card}>
-      {comment?.key && <Badge>핵심 장면</Badge>}
+      {opening && <p className={v.openingName}>{opening.label}</p>}
+      {(comment?.key || opening?.changed || opening?.deviation) && (
+        <div className={v.badges}>
+          {comment?.key && <Badge>핵심 장면</Badge>}
+          {opening?.changed && <Badge>오프닝</Badge>}
+          {opening?.deviation && <Badge>이론 이탈</Badge>}
+        </div>
+      )}
       <p className={v.move}>{title}</p>
       {review.status !== 'done' && <ReviewPanel state={review} onStart={onStartReview} />}
       {data && ply > 0 && (label ? <JudgmentLine label={label} /> : <p className={v.detail}>강제 수</p>)}
@@ -68,6 +79,8 @@ export function JudgmentCard({
           형세 {formatScore(before)} → {formatScore(after)}
         </p>
       )}
+      {opening?.summary && <CommentText key={`opening-${ply}`} text={opening.summary} />}
+      {opening?.deviation && <p className={v.detail}>{opening.deviation}</p>}
       {comment && <CommentText key={ply} text={comment.text} />}
       {(quiz || guide) && (
         <div className={v.quizRow}>
