@@ -117,7 +117,12 @@ describe('PlayPage', () => {
           bestMove: (fen) => (fen === START ? 'e2e4' : 'e7e5'),
         }),
     )
-    const play = new UciEngine(() => new FakeWorker({ bestMove: () => 'e7e5' }))
+    // 상대 응수를 손으로 풀어 준다
+    let reply: (uci: string) => void = () => {}
+    const play = {
+      bestMove: vi.fn(() => new Promise<string | null>((r) => (reply = r))),
+      stop: vi.fn(),
+    } as unknown as UciEngine
     renderRoute('/play/f1', { store, engines: { play, analysis } })
     await screen.findByText('내 차례')
     expect(screen.queryByRole('region', { name: '수 평가' })).toBeNull()
@@ -127,7 +132,14 @@ describe('PlayPage', () => {
     await waitFor(() => expect(within(card).getByText('실수')).toBeInTheDocument())
     expect(card).toHaveTextContent('1. a3')
     expect(card).toHaveTextContent('더 나은 수 e4')
+    // 카드는 보드 아래에 둔다(카드가 생겨도 보드가 밀리지 않는다)
+    expect(screen.getByTestId('board').compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 내 수가 마지막 수인 동안에만 더 나은 수 화살표를 그린다
     expect(boardProps.current!.shapes).toEqual([expect.objectContaining({ orig: 'e2', dest: 'e4' })])
+    await act(async () => reply('e7e5'))
+    await waitFor(async () => expect((await store.forks.get('f1'))?.moves).toEqual(['a2a3', 'e7e5']))
+    await waitFor(() => expect(boardProps.current!.shapes ?? []).toEqual([]))
+    expect(card).toHaveTextContent('더 나은 수 e4')
     const moves = screen.getByTestId('play-moves')
     expect(within(moves).getByTitle('실수')).toHaveTextContent('a3?')
 

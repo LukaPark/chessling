@@ -111,10 +111,10 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
   const canTakeback = takeback(fork) !== fork
   const original = useGame(fork.origin)
   const [evalOn, setEvalOn] = useMoveEvalPref()
-  const evaluation = useMoveEvaluation({ plies, playerColor: fork.playerColor, enabled: evalOn, seed: fork.id })
+  const evaluation = useMoveEvaluation({ plies, playerColor: fork.playerColor, enabled: evalOn, over: status.over, seed: fork.id })
   const latest = evaluation.latest
-  // 더 나은 수 화살표는 내가 다음 수를 둘 때까지 둔다
-  const betterUci = latest?.status === 'done' ? latest.betterUci : null
+  // 더 나은 수 화살표는 평가한 내 수가 보드의 마지막 수인 동안만 그린다(상대가 응수하거나 무르면 지운다)
+  const betterUci = latest?.status === 'done' && latest.index === plies.length - 1 ? latest.betterUci : null
   const shapes = useMemo(() => (betterUci ? [bestMoveArrow(betterUci)] : []), [betterUci])
 
   return (
@@ -144,7 +144,6 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
             </>
           )}
         </p>
-        {latest && <MoveEvalCard plies={plies} latest={latest} />}
         <div className={g.boardWrap}>
           <Board
             fen={status.fen}
@@ -158,6 +157,8 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
       </div>
 
       <div className={g.panel}>
+        {/* 보드 아래(md 이상은 옆 열 맨 위)에 둬서 카드가 생기거나 커져도 보드가 움직이지 않는다 */}
+        {latest && <MoveEvalCard plies={plies} latest={latest} />}
         <Disclosure title="기보" testId="play-moves">
           <MoveList plies={plies} current={plies.length - 1} labels={evaluation.labels} />
         </Disclosure>

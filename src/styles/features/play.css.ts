@@ -19,10 +19,13 @@ export const stage = style({
   selectors: { [`${gameStage}&`]: { '@media': { [mq.md]: { gridTemplateColumns: boardColumn } } } },
 })
 
-// 분기 대국의 수 평가 카드. 뷰어 판정 카드보다 얇게, 상태 줄 바로 아래에 둔다.
+// 분기 대국의 수 평가 카드. 보드 아래(md 이상은 옆 열 맨 위)에 둔다.
+// 평가 중 → 결과로 바뀌어도 높이가 흔들리지 않도록 판정 줄 + 코멘트 두 줄(1.6 × 2) 높이를 잡아 둔다.
 export const evalCard = style({
   display: 'grid',
+  alignContent: 'start',
   gap: space[1],
+  minHeight: `calc(${space[3]} * 2 + ${fontSize.control} * 1.6 + ${space[1]} + ${fontSize.body} * 1.6 * 2)`,
   padding: `${space[3]} ${space[4]}`,
   borderRadius: radius.surface,
   background: vars.color.surfaceSubtle,
