@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { fontSize, mq, space, vars, weight } from '../tokens.css'
+import { fontSize, mq, radius, space, vars, weight } from '../tokens.css'
 import { boardColumn, stage as gameStage } from './gameLayout.css'
 
 export const status = style({ display: 'inline-flex', alignItems: 'center', gap: space[2], fontSize: fontSize.lead, fontWeight: weight.medium })
@@ -18,3 +18,27 @@ export const forkActions = style({ gridArea: 'end', display: 'flex', gap: space[
 export const stage = style({
   selectors: { [`${gameStage}&`]: { '@media': { [mq.md]: { gridTemplateColumns: boardColumn } } } },
 })
+
+// 분기 대국의 수 평가 카드. 보드 아래(md 이상은 옆 열 맨 위)에 둔다.
+// 평가 중 → 결과로 바뀌어도 높이가 흔들리지 않도록 판정 줄 + 코멘트 두 줄(1.6 × 2) 높이를 잡아 둔다.
+export const evalCard = style({
+  display: 'grid',
+  alignContent: 'start',
+  gap: space[1],
+  minHeight: `calc(${space[3]} * 2 + ${fontSize.control} * 1.6 + ${space[1]} + ${fontSize.body} * 1.6 * 2)`,
+  padding: `${space[3]} ${space[4]}`,
+  borderRadius: radius.surface,
+  background: vars.color.surfaceSubtle,
+})
+export const evalLine = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'baseline',
+  columnGap: space[2],
+  fontSize: fontSize.control,
+  fontVariantNumeric: 'tabular-nums',
+})
+export const evalMove = style({ fontWeight: weight.medium })
+export const evalLabel = style({ display: 'inline-flex', gap: space[1], fontWeight: weight.medium })
+export const evalSep = style({ color: vars.color.muted })
+export const evalMuted = style({ color: vars.color.muted })

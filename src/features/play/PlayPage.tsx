@@ -2,9 +2,10 @@ import { cx } from '../../ui/cx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Key } from '@lichess-org/chessground/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Download, Flag, Gauge, LoaderCircle, Undo2 } from 'lucide-react'
+import { BadgeCheck, Download, Flag, Gauge, LoaderCircle, Undo2 } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { useEngines } from '../../app/EngineContext'
+import { useMoveEvalPref } from '../../app/moveEvalPref'
 import { useStore } from '../../app/StoreContext'
 import { downloadText } from '../../app/download'
 import {
@@ -24,6 +25,7 @@ import { refToPath } from '../../chess/gameRef'
 import type { Ply } from '../../chess/types'
 import { Banner } from '../../components/Banner'
 import { Board } from '../../components/Board'
+import { bestMoveArrow } from '../../components/boardShapes'
 import { MoveList } from '../../components/MoveList'
 import { epdOf } from '../../openings/line'
 import * as g from '../../styles/features/gameLayout.css'
@@ -37,6 +39,8 @@ import { useDebounced } from '../../ui/useDebounced'
 import { NotFound } from '../NotFound'
 import { useGame } from '../viewer/useGame'
 import { EloSlider } from './EloSlider'
+import { MoveEvalCard } from './MoveEvalCard'
+import { useMoveEvaluation } from './useMoveEvaluation'
 
 const REASON_TEXT: Record<EndReason, string> = {
   checkmate: '체크메이트',
@@ -106,6 +110,12 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
   const plies = useMemo(() => forkPlies(fork), [fork])
   const canTakeback = takeback(fork) !== fork
   const original = useGame(fork.origin)
+  const [evalOn, setEvalOn] = useMoveEvalPref()
+  const evaluation = useMoveEvaluation({ plies, playerColor: fork.playerColor, enabled: evalOn, over: status.over, seed: fork.id })
+  const latest = evaluation.latest
+  // 더 나은 수 화살표는 평가한 내 수가 보드의 마지막 수인 동안만 그린다(상대가 응수하거나 무르면 지운다)
+  const betterUci = latest?.status === 'done' && latest.index === plies.length - 1 ? latest.betterUci : null
+  const shapes = useMemo(() => (betterUci ? [bestMoveArrow(betterUci)] : []), [betterUci])
 
   return (
     <div className={g.page}>
@@ -140,14 +150,17 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
             orientation={fork.playerColor}
             lastMoveUci={status.lastMove}
             check={status.check}
+            shapes={shapes}
             movable={{ color: fork.playerColor, dests, onMove }}
           />
         </div>
       </div>
 
       <div className={g.panel}>
+        {/* 보드 아래(md 이상은 옆 열 맨 위)에 둬서 카드가 생기거나 커져도 보드가 움직이지 않는다 */}
+        {latest && <MoveEvalCard plies={plies} latest={latest} />}
         <Disclosure title="기보" testId="play-moves">
-          <MoveList plies={plies} current={plies.length - 1} />
+          <MoveList plies={plies} current={plies.length - 1} labels={evaluation.labels} />
         </Disclosure>
         {original.data &&
           (startsFromOriginal(original.data.plies, fork) ? (
@@ -180,6 +193,7 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
           }}
         />
         <BarButton icon={Gauge} label={`엔진 세기 (Elo ${fork.engineElo})`} caption={`Elo ${fork.engineElo}`} onClick={() => setEloOpen(true)} />
+        <BarButton icon={BadgeCheck} label="수 평가" caption pressed={evalOn} onClick={() => setEvalOn(!evalOn)} />
         <BarButton
           icon={Download}
           label="PGN 내보내기"
