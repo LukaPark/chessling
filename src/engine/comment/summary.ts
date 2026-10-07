@@ -5,12 +5,12 @@ import type { Ply, Result, Turn } from '../../chess/types'
 import { winPercent } from '../classify'
 import type { MoveLabel } from '../judge'
 import type { GameReview } from '../review'
-import { flowLine, type FlowInput } from './flow'
-import { withJosa } from './korean'
 
 export interface GameSummaryText {
+  /** 감상 한 문장 */
   headline: string
-  line: string
+  /** 결과와 수 번호만 담은 짧은 사실 */
+  caption: string
 }
 
 export interface SummaryInput {
@@ -57,8 +57,6 @@ export const SUMMARY_THRESHOLDS = {
   drawEven: 30,
   /** 이 수(full move) 안에 끝난 체크메이트는 항상 제목으로, "N수 만의"도 이때만 */
   miniatureMoves: 20,
-  headlineMax: 24,
-  lineMax: 60,
 } as const
 const T = SUMMARY_THRESHOLDS
 
@@ -89,6 +87,8 @@ export interface SummaryFacts {
   flawless?: boolean
   /** 무승부(draw): 크게 앞섰던 쪽 */
   ahead?: Turn
+  /** 메이트로 바뀌기 전의 이야기 */
+  base?: SummaryKind
   /** 형세만 본 승리: 진 쪽이 앞서 있었다 / 내내 팽팽 / 그 밖 */
   shape?: 'loserAhead' | 'even' | 'unsettled'
 }
@@ -162,7 +162,7 @@ export function classifyGame(input: SummaryInput): SummaryFacts | null {
   const lastMove = moveNumberOf(g.plies[0].fen, n).number
   const facts = (kind: SummaryKind, ply: number | null, extra: Partial<SummaryFacts> = {}): SummaryFacts => {
     // 체크메이트는 결과만 남은 판(완승·그냥 승리)이거나 아주 짧은 판일 때 제목이 된다
-    if (mate && (kind === 'dominant' || kind === 'decisive' || lastMove <= T.miniatureMoves)) return { kind: 'mate', ply: n, winner, mate }
+    if (mate && (kind === 'dominant' || kind === 'decisive' || lastMove <= T.miniatureMoves)) return { kind: 'mate', ply: n, winner, mate, base: kind, ...extra }
     return { kind, ply, winner, mate, ...extra }
   }
 
@@ -206,96 +206,205 @@ export function classifyGame(input: SummaryInput): SummaryFacts | null {
   return facts('decisive', clear)
 }
 
-// ── 문장 ──────────────────────────────────────────────
+// ── 한줄평 ──────────────────────────────────────────────
 
-type View = 'neutral' | 'won' | 'lost'
+/** 판의 모양: 한줄평 문장 묶음을 고르는 기준 */
+export type SummaryShape = 'quick' | 'squeeze' | 'hardWon' | 'sudden' | 'comeback' | 'chaos' | 'offBoard' | 'tightDraw' | 'messyDraw' | 'ongoing'
 
-interface Ctx {
-  /** 중심 수의 수 번호 */
-  N: number
-  /** 마지막 수의 수 번호 */
-  M: number
-  /** 중심 수의 판정: 블런더 / 실수. 실수·블런더가 아니면 null */
-  lab: string | null
-  /** 중심 수가 초반(earlyPly 안)인가 */
-  early: boolean
-  facts: SummaryFacts
-  view: View
-  W: Turn
-  /** 진 쪽. 무승부·진행 중이면 중심 수를 둔 쪽, 무승부(draw)면 앞섰던 쪽 */
-  L: Turn
-  /** 이름: 나 / 상대 / 백 / 흑 */
-  name: (t: Turn) => string
-  /** 꾸밈: 내 / 상대 / 백 / 흑 */
-  pre: (t: Turn) => string
-  /** 소유: 내 / 상대의 / 백의 / 흑의 */
-  poss: (t: Turn) => string
-  /** 제목용 소유: 나의 / 상대의 / 백의 / 흑의 */
-  of: (t: Turn) => string
-  /** 주어: 내가 / 상대가 / 백이 / 흑이 */
-  subj: (t: Turn) => string
-  /** 주제: (나는 생략) / 상대는 / 백은 / 흑은 + 공백 */
-  topic: (t: Turn) => string
-  /** 쪽: 내 쪽 / 상대 쪽 / 백 쪽 / 흑 쪽 */
-  toward: (t: Turn) => string
-}
+/** 우세를 지킨 채 이 수(full move) 안에 끝난 승리는 짧은 판 */
+export const QUICK_MOVES = 25
 
-type Phrase = (c: Ctx) => string
-interface Phrases {
-  headline: Phrase[]
-}
-const by = (neutral: Phrase, won: Phrase, lost: Phrase): Phrase => (c) => (c.view === 'won' ? won(c) : c.view === 'lost' ? lost(c) : neutral(c))
-/** 실수·블런더가 확실한 수에만 쓴다 */
-const lab = (c: Ctx) => c.lab ?? '실수'
-
-type PhraseKey = Exclude<SummaryKind, 'inProgress' | 'dominant' | 'decisive'> | 'dominantFlawless' | 'dominantSoft' | 'decisiveSlip' | 'decisivePlain'
-
-const PHRASES: Record<PhraseKey, Phrases> = {
-  turning: {
-    headline: [
-      (c) => `${c.N}수에 갈린 판`,
-      by(
-        (c) => `${c.N}수 ${withJosa(lab(c), '으로/로')} 갈린 판`,
-        (c) => `${c.N}수 ${withJosa(lab(c), '으로/로')} 갈린 판`,
-        (c) => `${c.N}수 ${withJosa(lab(c), '이/가')} 아쉬운 판`,
-      ),
+/**
+ * 모양마다 문장 묶음. neutral은 누구 편도 아닌 말, won/lost는 내 대국에서 이겼을 때·졌을 때.
+ * 백/흑이나 수 번호는 넣지 않는다(그건 캡션 몫).
+ */
+export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]; lost?: string[] }> = {
+  quick: {
+    neutral: [
+      '짧고 굵게, 한 번 잡은 흐름을 끝까지 놓지 않은 판',
+      '거침없었어요. 숨 고를 틈도 없이.',
+      '한쪽으로 기운 뒤로는 금방 끝났어요.',
+      '망설임 없이 달려가 일찍 끝을 본 판',
+      '길게 갈 이유가 없었던 판.',
+      '방향이 정해지자 망설임이 없었어요.',
+    ],
+    won: [
+      '거침없었어요. 상대가 숨 고를 틈도 없이.',
+      '처음 잡은 흐름을 끝까지 놓지 않았어요.',
+      '망설임 없이 밀고 나가 일찍 끝냈어요.',
+      '짧고 굵게, 내 판이었어요.',
+      '한 번 잡은 기세가 끝까지 갔어요.',
+    ],
+    lost: [
+      '오늘은 상대가 한 수 위였어요.',
+      '손쓸 틈도 없이 지나간 판이에요.',
+      '빨리 끝났지만 배울 게 많은 판이에요.',
+      '상대의 기세가 너무 빨랐어요.',
+      '다음엔 첫걸음부터 더 단단하게 가 봐요.',
+    ],
+  },
+  squeeze: {
+    neutral: [
+      '소리 없이 조여 오다 어느새 끝나 있던 판',
+      '서두르지 않고 한 칸씩 숨통을 조인 판',
+      '큰 소리 없이 차곡차곡 쌓아 올린 승리.',
+      '천천히, 그러나 확실하게.',
+      '조용한 압박이 결국 판을 정했어요.',
+      '티 나지 않게 앞서 나가 그대로 끝난 판',
+    ],
+    won: [
+      '서두르지 않고 차곡차곡 쌓아 올린 승리예요.',
+      '조용히 조여 간 끝에 얻은 판이에요.',
+      '천천히, 그러나 확실하게 이겼어요.',
+      '한 칸씩 숨통을 조여 간 판이에요.',
+      '내 걸음대로 끝까지 간 판이에요.',
+    ],
+    lost: [
+      '조금씩 숨이 막혀 오던 판이에요.',
+      '어디서부터 밀렸는지 다시 볼 만한 판이에요.',
+      '상대가 조금씩 길을 막아 왔어요.',
+      '버텼지만 조금씩 밀려났어요.',
+      '티 나지 않게 조여 온 상대가 강했어요.',
+    ],
+  },
+  hardWon: {
+    neutral: [
+      '흔들리면서도 끝내 놓지 않은 판',
+      '몇 번 비틀거렸지만 길을 잃지는 않았어요.',
+      '매끄럽진 않았지만 결국 닿은 판',
+      '울퉁불퉁한 길 끝에 도착한 승리.',
+      '삐걱거려도 멈추지 않았던 판',
+    ],
+    won: [
+      '삐걱거려도 멈추지 않았어요.',
+      '몇 번 비틀거렸지만 결국 해냈어요.',
+      '매끄럽진 않아도 이긴 판이에요.',
+      '흔들렸지만 놓지 않았어요.',
+      '고비를 넘기고 얻은 승리예요.',
+    ],
+    lost: [
+      '기회가 몇 번 있었던 판이에요.',
+      '상대도 흔들렸는데, 잡지 못했어요.',
+      '아까운 장면이 많았던 판이에요.',
+      '조금만 더 버텼다면 싶은 판이에요.',
+      '끝까지 해볼 만했던 판이에요.',
+    ],
+  },
+  sudden: {
+    neutral: [
+      '버티고 버티다 한 번에 무너졌어요.',
+      '오래 맞서던 균형이 한순간에 깨진 판',
+      '팽팽하던 줄이 한 번에 끊어졌어요.',
+      '길게 이어진 균형, 그리고 단 한 번의 틈.',
+      '한 수가 모든 걸 바꾼 판',
+      '조용하던 판이 한순간에 기울었어요.',
+    ],
+    won: [
+      '오래 기다린 단 한 번의 틈을 놓치지 않았어요.',
+      '버티고 버티다 찾아온 기회를 잡았어요.',
+      '팽팽하던 줄을 먼저 끊어 낸 판이에요.',
+      '참고 기다린 보람이 있었어요.',
+      '한 번의 기회면 충분했어요.',
+    ],
+    lost: [
+      '잘 버티다 한 번에 무너졌어요.',
+      '단 한 번의 틈이 너무 아팠어요.',
+      '팽팽하게 잘 맞서던 판이라 더 아쉬워요.',
+      '한 수만 다시 둘 수 있다면 싶은 판이에요.',
+      '거의 다 왔는데, 한 번이 모자랐어요.',
     ],
   },
   comeback: {
-    headline: [by((c) => `${c.of(c.W)} 역전승`, () => '역전승', () => '역전승'), (c) => `${c.N}수에 뒤집힌 판`],
+    neutral: [
+      '무너질 듯하다 다시 일어선 판',
+      '끝났다 싶은 순간부터 다시 시작된 판',
+      '포기하지 않은 쪽이 결국 웃었어요.',
+      '밀리고 또 밀리다 한 번에 뒤집었어요.',
+      '벼랑 끝에서 돌아 나온 판',
+      '기울었던 판이 거꾸로 쏟아졌어요.',
+    ],
+    won: [
+      '포기하지 않은 덕분이에요.',
+      '벼랑 끝에서 돌아 나왔어요.',
+      '밀려도 끝까지 버틴 보람이 있었어요.',
+      '다 진 줄 알았던 판을 뒤집었어요.',
+      '끝까지 기회를 기다린 판이에요.',
+    ],
+    lost: [
+      '다 잡은 판이 손에서 빠져나갔어요.',
+      '앞서던 판이라 더 아쉬워요.',
+      '한 번 흔들린 게 끝까지 이어졌어요.',
+      '잘 싸우고도 뒤집힌 판이에요.',
+      '이길 수 있었던 판, 다음엔 꼭.',
+    ],
   },
-  comebackLoss: {
-    headline: [() => '아쉬운 역전패', (c) => `${c.N}수에 뒤집힌 판`],
+  chaos: {
+    neutral: [
+      '서로 넘어지고 일어서다 먼저 일어선 쪽이 이긴 판',
+      '실수조차 대담했던 판.',
+      '누구도 쉽게 놓아주지 않던 혼전',
+      '넘어지고 또 넘어지며 끝까지 간 판',
+      '정신없이 오가다 마지막에 웃은 쪽이 있던 판',
+      '매끄럽진 않아도 뜨거웠던 판.',
+    ],
+    won: [
+      '넘어져도 먼저 일어났어요.',
+      '흔들리면서도 끝까지 붙잡은 판이에요.',
+      '엉망이었어도 이긴 건 이긴 거예요.',
+      '실수조차 대담했던 판이에요.',
+      '서로 흔들리다 먼저 중심을 잡았어요.',
+    ],
+    lost: [
+      '서로 흔들리던 판, 마지막 한 번이 아쉬워요.',
+      '기회는 나에게도 있었어요.',
+      '주고받다 마지막에 놓친 판이에요.',
+      '실수가 실수를 부른 판이었어요.',
+      '다음엔 덜 흔들리면 돼요.',
+    ],
   },
-  dominantFlawless: {
-    headline: [(c) => (c.early ? `처음부터 ${c.pre(c.W)} 우세` : `${c.of(c.W)} 승리`), (c) => `${c.of(c.W)} 승리`],
+  offBoard: {
+    neutral: [
+      '승부는 판 밖에서 갈렸어요.',
+      '판 위의 형세와 결과가 엇갈린 판',
+      '형세보다 먼저 결과가 나왔어요.',
+      '판 위에선 아직 끝나지 않았던 판',
+      '결과만으로는 다 말할 수 없는 판',
+    ],
+    won: [
+      '판 밖에서 얻은 승리예요.',
+      '형세와 달리 결과는 내 편이었어요.',
+      '결과가 먼저 찾아온 판이에요.',
+      '판 위에선 아직 끝나지 않았던 승리예요.',
+      '이런 날도 있어요.',
+    ],
+    lost: [
+      '판 위에선 아직 끝나지 않았던 판이에요.',
+      '결과가 형세를 앞질러 간 판이에요.',
+      '판 밖에서 갈린 승부라 더 아쉬워요.',
+      '결과만 보고 지나치기엔 아까운 판이에요.',
+      '이런 날도 있어요.',
+    ],
   },
-  dominantSoft: {
-    headline: [(c) => `${c.subj(c.W)} 앞서서 이긴 판`, (c) => `${c.of(c.W)} 승리`],
-  },
-  decisiveSlip: {
-    headline: [(c) => `${c.N}수에 갈린 판`, (c) => `${c.N}수 ${withJosa(lab(c), '으로/로')} 갈린 판`],
-  },
-  decisivePlain: {
-    headline: [(c) => `${c.N}수에 갈린 판`, (c) => `${c.of(c.W)} 승리`],
-  },
-  result: {
-    headline: [by((c) => `${c.of(c.W)} 승리`, () => '나의 승리', () => '아쉬운 패배')],
-  },
-  slugfest: {
-    headline: [() => '실수가 잦았던 판', () => '서로 실수가 많았던 판'],
-  },
-  mate: {
-    headline: [(c) => (c.M <= T.miniatureMoves ? `${c.M}수 만에 메이트` : `${c.M}수째 메이트`)],
-  },
-  cleanDraw: {
-    headline: [() => '비긴 판', () => '큰 실수 없이 비긴 판'],
+  tightDraw: {
+    neutral: [
+      '끝까지 팽팽했던 줄다리기.',
+      '누구도 한 발 물러서지 않았어요.',
+      '주고받은 만큼 나눠 가진 판',
+      '서로를 끝까지 놓아주지 않은 판',
+      '균형 위에서 끝까지 버틴 판',
+    ],
   },
   messyDraw: {
-    headline: [() => '결국 비긴 판', () => '실수가 나왔지만 비긴 판'],
+    neutral: [
+      '흔들리고 흔들리다 제자리로 돌아온 판',
+      '기울었던 판이 다시 평평해졌어요.',
+      '이길 수도, 질 수도 있었던 판',
+      '주고받다 결국 나눠 가진 판',
+      '끝내 누구 편도 들지 않은 판',
+    ],
   },
-  draw: {
-    headline: [() => '비긴 판', () => '결국 비긴 판'],
+  ongoing: {
+    neutral: ['아직 이야기가 끝나지 않았어요.', '다음 수가 궁금해지는 판', '아직 결말을 쓰는 중이에요.', '지금부터가 진짜일지도 몰라요.', '판은 아직 열려 있어요.'],
   },
 }
 
@@ -305,79 +414,98 @@ function hash(s: string): number {
   return h >>> 0
 }
 
-function context(input: SummaryInput, facts: SummaryFacts): Ctx {
-  const me = input.mySide ?? null
-  const isMe = (t: Turn) => me === t
-  const name = (t: Turn) => (me ? (isMe(t) ? '나' : '상대') : t === 'w' ? '백' : '흑')
-  const pre = (t: Turn) => (isMe(t) ? '내' : name(t))
-  const W = facts.winner ?? 'w'
-  const start = input.plies[0].fen
-  const n = Math.min(input.plies.length, input.review.positions.length) - 1
-  // 중심 수가 없으면 마지막 수를 쓴다(문장에 쓰지 않는 경우)
-  const ply = facts.ply ?? n
-  const L =
-    facts.kind === 'draw' ? facts.ahead! : facts.kind === 'messyDraw' || facts.kind === 'inProgress' ? turnOf(input.plies[ply - 1].fen) : other(W)
-  const label = input.review.labels[ply]
-  return {
-    N: moveNumberOf(start, ply).number,
-    M: moveNumberOf(start, n).number,
-    lab: label === 'blunder' ? '블런더' : label === 'mistake' ? '실수' : null,
-    early: ply <= T.earlyPly,
-    facts,
-    view: !me || facts.winner === null ? 'neutral' : me === W ? 'won' : 'lost',
-    W,
-    L,
-    name,
-    pre,
-    poss: (t) => (isMe(t) ? '내' : `${name(t)}의`),
-    of: (t) => `${name(t)}의`,
-    subj: (t) => (isMe(t) ? '내가' : withJosa(name(t), '이/가')),
-    topic: (t) => (isMe(t) ? '' : `${withJosa(name(t), '은/는')} `),
-    toward: (t) => `${pre(t)} 쪽`,
-  }
+interface Shaped {
+  facts: SummaryFacts
+  shape: SummaryShape
+  n: number
 }
 
-function inProgressHeadline(c: Ctx, facts: SummaryFacts): string {
-  return facts.winner === null ? '진행 중, 지금은 비슷해요' : `진행 중, 지금은 ${c.pre(facts.winner)} 우세`
-}
-
-function phraseKey(facts: SummaryFacts, c: Ctx): PhraseKey {
-  if (facts.kind === 'dominant') return facts.flawless ? 'dominantFlawless' : 'dominantSoft'
-  if (facts.kind === 'decisive') return c.lab ? 'decisiveSlip' : 'decisivePlain'
-  return facts.kind as PhraseKey
-}
-
-/** 리뷰가 끝난 대국을 제목 한 줄과, 대국 전체 흐름을 담은 설명 한 문장으로 요약한다. 같은 대국이면 같은 문장 */
-export function summarizeGame(input: SummaryInput): GameSummaryText | null {
+function shaped(input: SummaryInput): Shaped | null {
   const facts = classifyGame(input)
   if (!facts) return null
-  const c = context(input, facts)
-  const seed = hash(input.plies.map((p) => p.san ?? '').join(' '))
-  const headline = facts.kind === 'inProgress' ? inProgressHeadline(c, facts) : PHRASES[phraseKey(facts, c)].headline[seed % PHRASES[phraseKey(facts, c)].headline.length](c)
-  const len = Math.min(input.plies.length, input.review.positions.length)
-  const line = flowLine({
-    plies: input.plies.slice(0, len),
-    labels: input.review.labels,
-    win: input.review.positions.slice(0, len).map((p) => winPercent(p.score)),
-    ending: endingOf(facts),
-    names: c,
-    me: input.mySide ?? null,
-    seed: seed >>> 8,
-  })
-  return { headline, line }
+  const n = Math.min(input.plies.length, input.review.positions.length) - 1
+  const lastMove = moveNumberOf(input.plies[0].fen, n).number
+  const winnerSlips = () =>
+    range(1, n).filter((i) => (input.review.labels[i] === 'mistake' || input.review.labels[i] === 'blunder') && turnOf(input.plies[i - 1].fen) === facts.winner).length
+  // 짧은 판: 잡은 우세를 놓치지 않고, 일찍 잡았거나 일찍 끝난 판
+  const fromWin = (kind: SummaryKind | undefined): SummaryShape => {
+    if (kind === 'dominant' && facts.flawless && (lastMove <= QUICK_MOVES || (facts.ply ?? n) <= T.earlyPly)) return 'quick'
+    return winnerSlips() >= 2 ? 'hardWon' : 'squeeze'
+  }
+  const shape: SummaryShape = (() => {
+    switch (facts.kind) {
+      case 'inProgress':
+        return 'ongoing'
+      case 'cleanDraw':
+        return 'tightDraw'
+      case 'messyDraw':
+      case 'draw':
+        return 'messyDraw'
+      case 'result':
+        return 'offBoard'
+      case 'comeback':
+      case 'comebackLoss':
+        return 'comeback'
+      case 'slugfest':
+        return 'chaos'
+      case 'turning':
+        return 'sudden'
+      case 'mate':
+        return fromWin(facts.base)
+      default:
+        return fromWin(facts.kind)
+    }
+  })()
+  return { facts, shape, n }
 }
 
-function endingOf(facts: SummaryFacts): FlowInput['ending'] {
-  switch (facts.kind) {
-    case 'inProgress':
-      return { kind: 'inProgress' }
-    case 'cleanDraw':
-    case 'messyDraw':
-    case 'draw':
-      return { kind: 'draw' }
-    case 'result':
-      return { kind: 'result', winner: facts.winner! }
-    default:
-      return { kind: 'decisive', winner: facts.winner!, mate: facts.mate }
-  }
+/** 판의 모양(한줄평 묶음). 요약할 수 없으면 null */
+export function shapeOf(input: SummaryInput): SummaryShape | null {
+  return shaped(input)?.shape ?? null
+}
+
+function captionOf(input: SummaryInput, { facts, n }: Shaped): string {
+  const me = input.mySide ?? null
+  const start = input.plies[0].fen
+  const side = (t: Turn) => (me ? (t === me ? '내' : '상대') : t === 'w' ? '백' : '흑')
+  if (facts.kind === 'inProgress') return facts.winner ? `진행 중 · 지금은 ${side(facts.winner)} 우세` : '진행 중 · 비슷한 형세'
+  if (facts.winner === null) return '무승부'
+  const who = me ? (me === facts.winner ? '내 승리' : '내 패배') : `${side(facts.winner)} 승`
+  const N = facts.ply !== null ? moveNumberOf(start, facts.ply).number : null
+  const detail = (() => {
+    switch (facts.kind) {
+      case 'mate':
+        return `${moveNumberOf(start, n).number}수 메이트`
+      case 'comeback':
+      case 'comebackLoss':
+        return `${N}수에 역전`
+      case 'dominant':
+        return `${N}수부터 우세`
+      case 'decisive':
+        return isSlip(input, facts) ? `${N}수에 갈림` : `${N}수부터 우세`
+      case 'turning':
+      case 'slugfest':
+        return N === null ? null : `${N}수에 갈림`
+      default:
+        return null
+    }
+  })()
+  return detail ? `${who} · ${detail}` : who
+}
+
+/** 그냥 이긴 판의 중심 수가 진 쪽 실수인가(아니면 우세를 잡은 수) */
+function isSlip(input: SummaryInput, facts: SummaryFacts): boolean {
+  const label = facts.ply !== null ? input.review.labels[facts.ply] : null
+  return label === 'mistake' || label === 'blunder'
+}
+
+/** 리뷰가 끝난 대국을 감상 한 문장과 사실 캡션으로 요약한다. 같은 대국이면 같은 문장 */
+export function summarizeGame(input: SummaryInput): GameSummaryText | null {
+  const s = shaped(input)
+  if (!s) return null
+  const me = input.mySide ?? null
+  const pools = HEADLINES[s.shape]
+  const pool = me && s.facts.winner && s.facts.kind !== 'inProgress' ? ((me === s.facts.winner ? pools.won : pools.lost) ?? pools.neutral) : pools.neutral
+  const seed = hash(input.plies.map((p) => p.san ?? '').join(' '))
+  return { headline: pool[seed % pool.length], caption: captionOf(input, s) }
 }

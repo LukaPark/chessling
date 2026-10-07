@@ -40,8 +40,8 @@ export function ReviewSummary({
           <p className={v.gameSummaryHeadline} data-summary="headline">
             {text.headline}
           </p>
-          <p className={v.gameSummaryLine} data-summary="line">
-            {text.line}
+          <p className={v.gameSummaryCaption} data-summary="caption">
+            {text.caption}
           </p>
         </div>
       )}

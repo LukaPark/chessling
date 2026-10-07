@@ -35,7 +35,7 @@ function plies(sans: string[]): Ply[] {
   return out
 }
 
-it('정확도 위에 대국 요약 제목과 한 문장을 보여준다', () => {
+it('정확도 위에 한줄평과 사실 캡션을 보여준다', () => {
   const fool = plies(['f3', 'e5', 'g4', 'Qh4#'])
   const cps = [0, 0, 0, -10000, -10000]
   const r: GameReview = {
@@ -44,9 +44,10 @@ it('정확도 위에 대국 요약 제목과 한 문장을 보여준다', () => 
     labels: [null, 'good', 'good', 'blunder', 'best'],
   }
   render(<ReviewSummary review={r} startTurn="w" plies={fool} result="0-1" mySide="b" onRerun={() => {}} />)
-  const headline = screen.getByText(/2수.*메이트/)
-  expect(headline).toHaveAttribute('data-summary', 'headline')
-  expect(screen.getByText(/요\.$/, { selector: '[data-summary="line"]' })).toBeInTheDocument()
+  expect(screen.getByText('내 승리 · 2수 메이트')).toHaveAttribute('data-summary', 'caption')
+  const headline = document.querySelector('[data-summary="headline"]')!
+  expect(headline.textContent).toMatch(/[가-힣]/)
+  expect(headline.textContent).not.toMatch(/\d/)
   // 요약이 정확도보다 앞에 온다
   expect(headline.compareDocumentPosition(screen.getByText(/백 정확도/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 })
