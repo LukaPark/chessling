@@ -1,12 +1,18 @@
 // @vitest-environment jsdom
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { RECENT_PLAYERS_KEY, resetRecentPlayersForTest } from '../../app/recentPlayers'
 import { useMswServer } from '../../test/msw'
 import { renderRoute } from '../../test/renderRoute'
 
 const server = useMswServer()
+beforeEach(() => {
+  localStorage.clear()
+  resetRecentPlayersForTest()
+})
+const recent = () => JSON.parse(localStorage.getItem(RECENT_PLAYERS_KEY) ?? '[]')
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers() })
 
 function cc(uuid: string, rules = 'chess') {
@@ -43,8 +49,16 @@ describe('PlayerPage', () => {
     expect(screen.getAllByText('승리').length).toBeGreaterThan(0)
     expect(screen.queryByText(/월별 조회와 대국 날짜/)).toBeNull()
     expect(screen.queryByRole('link', { name: /rival-b/ })).toBeNull()
+    expect(recent()).toEqual([{ platform: 'chesscom', username: 'Hikaru' }])
     await user.click(screen.getByRole('button', { name: '이전 달' }))
     expect(await screen.findByRole('link', { name: /rival-c/ })).toBeInTheDocument()
+  })
+
+  it('Chess.com: 대국을 불러오지 못하면 최근 검색에 넣지 않는다', async () => {
+    server.use(http.get('https://api.chess.com/pub/player/nobody/games/archives', () => new HttpResponse(null, { status: 404 })))
+    renderRoute('/player/chesscom/nobody')
+    expect(await screen.findByText(/찾을 수 없어요/)).toBeInTheDocument()
+    expect(recent()).toEqual([])
   })
 
   it('Lichess: 스트리밍으로 받은 대국 목록', async () => {
@@ -61,12 +75,14 @@ describe('PlayerPage', () => {
     renderRoute('/player/lichess/tester')
     expect(await screen.findByRole('link', { name: /tester.*vs.*rival/ })).toHaveAttribute('href', '/game/lichess/aaaa1111')
     expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull()
+    await waitFor(() => expect(recent()).toEqual([{ platform: 'lichess', username: 'tester' }]))
   })
 
   it('없는 유저는 에러 화면', async () => {
     server.use(http.get('https://lichess.org/api/games/user/nobody', () => new HttpResponse(null, { status: 404 })))
     renderRoute('/player/lichess/nobody')
     expect(await screen.findByText(/찾을 수 없어요/)).toBeInTheDocument()
+    expect(recent()).toEqual([])
   })
 
   it('알 수 없는 플랫폼은 NotFound', async () => {

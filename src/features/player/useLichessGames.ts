@@ -8,6 +8,8 @@ export function useLichessGames(username: string) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [errorCount, setErrorCount] = useState(0)
+  // 한 페이지라도 오류 없이 끝까지 받았는지
+  const [loaded, setLoaded] = useState(false)
   const lastUntil = useRef<number | undefined>(undefined)
   const committed = useRef<GameSummary[]>([])
   const controller = useRef<AbortController | null>(null)
@@ -37,6 +39,7 @@ export function useLichessGames(username: string) {
         if (!signal.aborted) {
           committed.current = [...base, ...received]
           setNextUntil(page.nextUntil)
+          setLoaded(true)
         }
       } catch (e) {
         if (!signal.aborted) {
@@ -60,6 +63,7 @@ export function useLichessGames(username: string) {
 
   return {
     games,
+    loaded,
     loading,
     error,
     errorCount,

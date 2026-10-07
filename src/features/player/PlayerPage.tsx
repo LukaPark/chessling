@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
+import { addRecentPlayer, type RecentPlayer } from '../../app/recentPlayers'
 import type { GameSummary, Speed } from '../../chess/types'
 import { ErrorView } from '../../components/ErrorView'
 import { queryKeys } from '../../sources'
@@ -48,6 +49,8 @@ function ChesscomGames({ username }: { username: string }) {
     queryFn: ({ signal }) => fetchChesscomKoreanMonth(username, month!.yyyy, month!.mm, archives.data ?? [], signal),
     staleTime: 60_000,
   })
+  // 대국이 없는 계정도 아카이브를 받았으면 불러온 것으로 본다
+  useRememberPlayer({ platform: 'chesscom', username }, games.isSuccess || (archives.isSuccess && !month))
 
   if (archives.isError) return <ErrorView key={archives.errorUpdatedAt} error={archives.error} onRetry={() => void archives.refetch()} />
   if (archives.isPending) return <p className={p.meta}>불러오는 중…</p>
@@ -73,7 +76,8 @@ function ChesscomGames({ username }: { username: string }) {
 }
 
 function LichessGames({ username }: { username: string }) {
-  const { games, loading, error, errorCount, hasMore, loadMore, retry } = useLichessGames(username)
+  const { games, loaded, loading, error, errorCount, hasMore, loadMore, retry } = useLichessGames(username)
+  useRememberPlayer({ platform: 'lichess', username }, loaded)
   return (
     <>
       <FilteredGames games={games} username={username} />
@@ -88,6 +92,16 @@ function LichessGames({ username }: { username: string }) {
       )}
     </>
   )
+}
+
+/** 대국 목록을 처음 제대로 불러왔을 때 한 번만 최근 검색에 넣는다(주소에 적힌 철자 그대로) */
+function useRememberPlayer({ platform, username }: RecentPlayer, loaded: boolean) {
+  const saved = useRef(false)
+  useEffect(() => {
+    if (!loaded || saved.current) return
+    saved.current = true
+    addRecentPlayer({ platform, username })
+  }, [loaded, platform, username])
 }
 
 function FilteredGames({ games, username }: { games: GameSummary[]; username: string }) {

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, ChartLine } from 'lucide-react'
+import { ArrowRight, ChartLine, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { removeRecentPlayer, useRecentPlayers } from '../../app/recentPlayers'
 import { refToPath } from '../../chess/gameRef'
 import { queryKeys } from '../../sources'
 import { listTopBroadcasts } from '../../sources/broadcast'
@@ -9,12 +10,14 @@ import { classics, todaysClassic, type Classic } from '../../sources/classics'
 import * as h from '../../styles/features/home.css'
 import { Button, LinkButton } from '../../ui/Button'
 import { TextField } from '../../ui/Field'
+import { Icon } from '../../ui/Icon'
 import { Section } from '../../ui/Section'
 import { Segmented } from '../../ui/Segmented'
 import { AutoplayBoard } from './AutoplayBoard'
 import { HeroTitle } from './HeroTitle'
 
 type Platform = 'chesscom' | 'lichess'
+const PLATFORM_LABEL: Record<Platform, string> = { chesscom: 'Chess.com', lichess: 'Lichess' }
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -42,8 +45,8 @@ export function HomePage() {
             value={platform}
             onChange={setPlatform}
             options={[
-              { value: 'chesscom', label: 'Chess.com' },
-              { value: 'lichess', label: 'Lichess' },
+              { value: 'chesscom', label: PLATFORM_LABEL.chesscom },
+              { value: 'lichess', label: PLATFORM_LABEL.lichess },
             ]}
           />
           <TextField
@@ -58,6 +61,7 @@ export function HomePage() {
           />
           <Button type="submit">불러오기</Button>
         </form>
+        <RecentSearches />
         <LinkButton tone="secondary" to={refToPath({ kind: 'classic', slug: today.slug })}>
           오늘의 명경기 보기
         </LinkButton>
@@ -67,6 +71,30 @@ export function HomePage() {
       <TodayStory classic={today} />
       <LiveEvents />
       <ClassicsTeaser exclude={today.slug} />
+    </div>
+  )
+}
+
+function RecentSearches() {
+  const recent = useRecentPlayers()
+  if (recent.length === 0) return null
+  return (
+    <div role="group" aria-labelledby="recent-searches" className={h.recent}>
+      <span id="recent-searches" className={h.recentLabel}>
+        최근 검색
+      </span>
+      <ul className={h.recentList}>
+        {recent.map((p) => (
+          <li key={`${p.platform}:${p.username}`} className={h.chip}>
+            <Link to={`/player/${p.platform}/${encodeURIComponent(p.username)}`} className={h.chipLink}>
+              {PLATFORM_LABEL[p.platform]} · {p.username}
+            </Link>
+            <button type="button" className={h.chipRemove} aria-label={`${p.username} 최근 검색에서 지우기`} onClick={() => removeRecentPlayer(p)}>
+              <Icon icon={X} size={16} />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
