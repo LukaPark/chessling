@@ -98,4 +98,16 @@ describe('HomePage', () => {
     await user.click(screen.getByRole('button', { name: 'hikaru 최근 검색에서 지우기' }))
     expect(screen.queryByRole('group', { name: '최근 검색' })).toBeNull()
   })
+
+  it('칩을 지우면 다음 칩, 없으면 이전 칩, 그것도 없으면 아이디 입력란으로 포커스를 옮긴다', async () => {
+    const user = userEvent.setup()
+    for (const u of ['c', 'b', 'a']) addRecentPlayer({ platform: 'lichess', username: u })
+    renderRoute('/')
+    await user.click(screen.getByRole('button', { name: 'b 최근 검색에서 지우기' }))
+    expect(screen.getByRole('link', { name: 'Lichess · c' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'c 최근 검색에서 지우기' }))
+    expect(screen.getByRole('link', { name: 'Lichess · a' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'a 최근 검색에서 지우기' }))
+    expect(screen.getByLabelText('아이디')).toHaveFocus()
+  })
 })

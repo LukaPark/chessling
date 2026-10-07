@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, ChartLine, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { removeRecentPlayer, useRecentPlayers } from '../../app/recentPlayers'
+import { removeRecentPlayer, useRecentPlayers, type RecentPlayer } from '../../app/recentPlayers'
 import { refToPath } from '../../chess/gameRef'
 import { queryKeys } from '../../sources'
 import { listTopBroadcasts } from '../../sources/broadcast'
@@ -23,6 +23,7 @@ export function HomePage() {
   const navigate = useNavigate()
   const [platform, setPlatform] = useState<Platform>('chesscom')
   const [username, setUsername] = useState('')
+  const usernameInput = useRef<HTMLInputElement>(null)
   const today = todaysClassic()
 
   return (
@@ -56,12 +57,13 @@ export function HomePage() {
             autoComplete="off"
             autoCapitalize="none"
             spellCheck={false}
+            ref={usernameInput}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
           <Button type="submit">불러오기</Button>
         </form>
-        <RecentSearches />
+        <RecentSearches fallbackFocus={usernameInput} />
         <LinkButton tone="secondary" to={refToPath({ kind: 'classic', slug: today.slug })}>
           오늘의 명경기 보기
         </LinkButton>
@@ -75,8 +77,26 @@ export function HomePage() {
   )
 }
 
-function RecentSearches() {
+const recentKey = (p: RecentPlayer) => `${p.platform}:${p.username}`
+
+/** 칩을 지우면 다음 칩 링크, 없으면 이전 칩 링크, 그것도 없으면 아이디 입력란으로 포커스를 옮긴다 */
+function RecentSearches({ fallbackFocus }: { fallbackFocus: RefObject<HTMLInputElement | null> }) {
   const recent = useRecentPlayers()
+  const links = useRef(new Map<string, HTMLAnchorElement>())
+  const focusAfterRemove = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    const target = focusAfterRemove.current
+    if (target === undefined) return
+    focusAfterRemove.current = undefined
+    const link = target === null ? undefined : links.current.get(target)
+    if (link) link.focus()
+    else fallbackFocus.current?.focus()
+  }, [recent, fallbackFocus])
+  const remove = (i: number) => {
+    const neighbor = recent[i + 1] ?? recent[i - 1]
+    focusAfterRemove.current = neighbor ? recentKey(neighbor) : null
+    removeRecentPlayer(recent[i])
+  }
   if (recent.length === 0) return null
   return (
     <div role="group" aria-labelledby="recent-searches" className={h.recent}>
@@ -84,12 +104,19 @@ function RecentSearches() {
         최근 검색
       </span>
       <ul className={h.recentList}>
-        {recent.map((p) => (
-          <li key={`${p.platform}:${p.username}`} className={h.chip}>
-            <Link to={`/player/${p.platform}/${encodeURIComponent(p.username)}`} className={h.chipLink}>
+        {recent.map((p, i) => (
+          <li key={recentKey(p)} className={h.chip}>
+            <Link
+              ref={(el) => {
+                if (el) links.current.set(recentKey(p), el)
+                else links.current.delete(recentKey(p))
+              }}
+              to={`/player/${p.platform}/${encodeURIComponent(p.username)}`}
+              className={h.chipLink}
+            >
               {PLATFORM_LABEL[p.platform]} · {p.username}
             </Link>
-            <button type="button" className={h.chipRemove} aria-label={`${p.username} 최근 검색에서 지우기`} onClick={() => removeRecentPlayer(p)}>
+            <button type="button" className={h.chipRemove} aria-label={`${p.username} 최근 검색에서 지우기`} onClick={() => remove(i)}>
               <Icon icon={X} size={16} />
             </button>
           </li>
