@@ -82,6 +82,28 @@ test.describe('가로 스크롤 회귀', () => {
   }
 })
 
+test('홈: 긴 아이디의 최근 검색 칩이 있어도 375px에서 가로 스크롤이 생기지 않는다', async ({ page }) => {
+  await mockLichessTop(page)
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'chessling-recent-players',
+      JSON.stringify([
+        { platform: 'chesscom', username: 'hikaru' },
+        { platform: 'lichess', username: 'DrNykterstein_with_a_very_long_name_x' },
+      ]),
+    ),
+  )
+  await page.goto('/')
+  const recent = page.getByRole('group', { name: '최근 검색' })
+  await expect(recent.getByRole('link', { name: 'Chess.com · hikaru' })).toHaveAttribute('href', '/player/chesscom/hikaru')
+  const remove = recent.getByRole('button', { name: 'hikaru 최근 검색에서 지우기' })
+  const box = (await remove.boundingBox())!
+  expect(box.width).toBeGreaterThanOrEqual(44)
+  expect(box.height).toBeGreaterThanOrEqual(44)
+  const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }))
+  expect(m.sw).toBeLessThanOrEqual(m.cw)
+})
+
 test('설정: 헤더 톱니에서 보드·기물을 고르면 새로고침 뒤에도 유지된다', async ({ page }) => {
   await mockLichessTop(page)
   await page.goto('/')

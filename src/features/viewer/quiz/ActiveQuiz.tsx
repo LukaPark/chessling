@@ -1,6 +1,6 @@
 import type { Key } from '@lichess-org/chessground/types'
 import { useReducedMotion } from 'motion/react'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { legalDests, toUci } from '../../../chess/fork'
 import { isCheck } from '../../../chess/pgn'
 import type { Color, Ply } from '../../../chess/types'
@@ -18,6 +18,7 @@ export function ActiveQuiz({
   plies,
   orientation,
   evaluate,
+  controls,
   onFinish,
   onContinue,
   onQuit,
@@ -26,6 +27,8 @@ export function ActiveQuiz({
   plies: Ply[]
   orientation: Color
   evaluate: Evaluate
+  /** 보드 바로 아래에 둘 조작 막대 */
+  controls?: ReactNode
   onFinish: (r: QuizFinish) => void
   onContinue: () => void
   onQuit: () => void
@@ -40,12 +43,15 @@ export function ActiveQuiz({
 
   return (
     <>
-      <div className={g.stage}>
-        {/* 퀴즈 중에는 평가를 숨긴다. 자리만 남겨 보드가 움직이지 않게 한다 */}
-        <EvalBar score={null} orientation={orientation} hidden />
-        <div className={g.boardWrap}>
-          <Board fen={quiz.fen} orientation={orientation} lastMoveUci={quiz.lastUci} check={isCheck(quiz.fen)} shapes={shapes} movable={movable} />
+      <div className={g.boardCol}>
+        <div className={g.stage}>
+          {/* 퀴즈 중에는 평가를 숨긴다. 자리만 남겨 보드가 움직이지 않게 한다 */}
+          <EvalBar score={null} orientation={orientation} hidden />
+          <div className={g.boardWrap}>
+            <Board fen={quiz.fen} orientation={orientation} lastMoveUci={quiz.lastUci} check={isCheck(quiz.fen)} shapes={shapes} movable={movable} />
+          </div>
         </div>
+        {controls}
       </div>
       <div className={g.panel}>
         <QuizCard scene={scene} quiz={quiz} onContinue={onContinue} onQuit={onQuit} />

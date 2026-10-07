@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { fontSize, mq, radius, space, vars, weight } from '../tokens.css'
-import { boardColumn, stage as gameStage } from './gameLayout.css'
+import { playBoardColumn, stage as gameStage } from './gameLayout.css'
 
 export const status = style({ display: 'inline-flex', alignItems: 'center', gap: space[2], fontSize: fontSize.lead, fontWeight: weight.medium })
 export const turnDot = style({ width: 8, height: 8, borderRadius: 999, background: vars.color.accent })
@@ -14,9 +14,9 @@ export const original = style({ color: vars.color.muted, fontSize: fontSize.cont
 export const forkActions = style({ gridArea: 'end', display: 'flex', gap: space[1] })
 
 // 뷰어의 stage는 md부터 '평가 바 | 보드' 두 열이다. 분기 대국엔 평가 바가 없으니 한 열로 되돌린다.
-// 보드 폭은 뷰어와 같은 상한(화면 높이 기준)을 둔다.
+// 보드 폭은 화면 높이 기준으로 줄이되, 보드 위에 차례 표시 줄이 더 있어 뷰어보다 많이 남긴다.
 export const stage = style({
-  selectors: { [`${gameStage}&`]: { '@media': { [mq.md]: { gridTemplateColumns: boardColumn } } } },
+  selectors: { [`${gameStage}&`]: { '@media': { [mq.md]: { gridTemplateColumns: playBoardColumn } } } },
 })
 
 // 분기 대국의 수 평가 카드. 보드 아래(md 이상은 옆 열 맨 위)에 둔다.
