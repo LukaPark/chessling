@@ -172,7 +172,7 @@ describe('ViewerPage', () => {
   it('리뷰가 끝나면 대국 요약 한 줄을 보여준다', async () => {
     renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     fireEvent.click(await screen.findByRole('button', { name: '리뷰 실행' }))
-    expect(await screen.findByText(/17수.*체크메이트/, { selector: '[data-summary="headline"]' })).toBeInTheDocument()
+    expect(await screen.findByText(/17수.*메이트/, { selector: '[data-summary="headline"]' })).toBeInTheDocument()
     expect(document.querySelector('[data-summary="line"]')?.textContent).toMatch(/요\.$/)
   })
 

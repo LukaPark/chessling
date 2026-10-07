@@ -46,7 +46,7 @@ describe('classifyGame', () => {
   it('팽팽하다가 한 번의 블런더로 갈린 판은 전환점', () => {
     const r = run(60, [[44, 20], [60, -600]], { 45: 'blunder' }, '0-1')
     expect(r.kind).toBe('turning')
-    expect(r.text?.headline).toMatch(/23수째/)
+    expect(r.text?.headline).toMatch(/23수/)
   })
   it('이긴 쪽이 크게 밀렸던 적이 있으면 역전', () => {
     const r = run(70, [[20, 0], [40, 600], [60, 300], [70, -700]], { 61: 'blunder' }, '0-1')
@@ -60,7 +60,7 @@ describe('classifyGame', () => {
   it('내가 이긴 역전이면 나의 역전승', () => {
     const r = run(70, [[20, 0], [40, 600], [60, 300], [70, -700]], { 61: 'blunder' }, '0-1', 'b')
     expect(r.kind).toBe('comeback')
-    expect(r.text?.headline).toMatch(/나의|내/)
+    expect(r.text?.headline).toMatch(/역전승|뒤집힌/)
     expect(r.text?.headline + r.text!.line).not.toMatch(/백|흑/)
   })
   it('초반에 잡은 우세를 끝까지 지키면 완승', () => {
@@ -72,13 +72,13 @@ describe('classifyGame', () => {
     const r = run(sans.length, [[8, 30], [22, 400], [100, 10000]], {}, '1-0', null, sans)
     expect(r.kind).toBe('mate')
     expect(r.text?.headline).toMatch(/12수/)
-    expect(r.text?.headline).toMatch(/체크메이트/)
+    expect(r.text?.headline).toMatch(/메이트/)
   })
   it('다른 이야기가 더 클 때 체크메이트는 설명에 붙인다', () => {
     const sans = [...shuffle(40), 'e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']
     const r = run(sans.length, [[10, 0], [30, -600], [41, -300], [100, 10000]], { 42: 'blunder' }, '1-0', null, sans)
     expect(r.kind).toBe('comeback')
-    expect(r.text?.line).toMatch(/체크메이트/)
+    expect(r.text?.line).toMatch(/메이트/)
   })
   it('실수가 없는 무승부는 빈틈없는 무승부', () => {
     const r = run(60, [[60, 10]], {}, '1/2-1/2')
@@ -87,27 +87,27 @@ describe('classifyGame', () => {
   it('실수가 있었던 무승부', () => {
     const r = run(60, [[31, 10], [41, 300], [60, 0]], { 32: 'mistake', 42: 'mistake' }, '1/2-1/2')
     expect(r.kind).toBe('messyDraw')
-    expect(r.text?.line).toMatch(/무승부/)
+    expect(r.text?.line).toMatch(/비겼/)
   })
   it('양쪽이 여러 번 실수하면 난타전', () => {
     const r = run(80, [[20, 0], [30, 200], [40, -100], [50, 250], [60, 0], [80, -500]], { 21: 'mistake', 32: 'mistake', 41: 'mistake', 52: 'blunder', 61: 'blunder' }, '0-1')
     expect(r.kind).toBe('slugfest')
-    expect(r.text?.headline).toMatch(/흑/)
+    expect(r.text?.line).toMatch(/흑이/)
   })
   it('진행 중이면 지금 우세한 쪽과 최근 실수', () => {
     const r = run(40, [[37, 0], [40, 500]], { 38: 'mistake' }, '*')
     expect(r.kind).toBe('inProgress')
-    expect(r.text?.headline).toBe('진행 중 · 지금은 백 우세')
-    expect(r.text?.line).toMatch(/^지금까지 .*백이 크게 앞서 있어요\.$/)
+    expect(r.text?.headline).toBe('진행 중, 지금은 백 우세')
+    expect(r.text?.line).toBe('19수쯤부터 백이 앞서 있어요.')
   })
   it('진행 중이고 비슷하면 팽팽해요', () => {
     const r = run(40, [[40, 20]], {}, '*')
-    expect(r.text?.headline).toBe('진행 중 · 팽팽해요')
+    expect(r.text?.headline).toBe('진행 중, 지금은 비슷해요')
   })
   it('진행 중, 내 쪽 시점', () => {
     const r = run(40, [[37, 0], [40, 500]], { 38: 'mistake' }, '*', 'w')
-    expect(r.text?.headline).toBe('진행 중 · 지금은 내 우세')
-    expect(r.text?.line).toMatch(/^지금까지 .*내가 크게 앞서 있어요\.$/)
+    expect(r.text?.headline).toBe('진행 중, 지금은 내 우세')
+    expect(r.text?.line).toBe('19수쯤부터 내가 앞서 있어요.')
   })
   it('수가 거의 없으면 null', () => {
     expect(summarizeGame({ review: review([0]), plies: game([]), result: '*' })).toBeNull()
@@ -163,10 +163,11 @@ describe('문장 규칙', () => {
     }
     expect(t.headline.length).toBeLessThanOrEqual(24)
     expect(t.line.length).toBeLessThanOrEqual(70)
-    // "~고, ~고" 같은 이음은 한 번까지
-    expect((t.line.match(/(했|섰|었|았|렸|졌)(고|지만)/g) ?? []).length).toBeLessThanOrEqual(1)
-    // 체크메이트와 실수 없이를 함께 쓰지 않는다
-    expect(t.line).not.toMatch(/실수 없이.*체크메이트/)
+    // 연결어미 바로 뒤 쉼표 없이, 쉼표는 한 번까지
+    expect(t.line).not.toMatch(/(고|지만|는데|다가|서|며),/)
+    expect((t.line.match(/,/g) ?? []).length).toBeLessThanOrEqual(1)
+    // 기계적으로 들리는 말
+    for (const s of [t.headline, t.line]) expect(s).not.toMatch(/무렵|격차|난타전|몰아붙여 체크|마무리했|분수령|깔끔|빈틈없|완승|한 번도 흔들리지|끝내 가져간|번 오간|체크메이트/)
     expect(t.line).toMatch(/요\.$/)
     // 'N수 만의'는 짧은 판에만
     const quick = t.headline.match(/(\d+)수 만의/)
@@ -207,7 +208,7 @@ describe('리뷰가 뒷받침하지 않는 말은 하지 않는다', () => {
     // ply 21 = 40...수(흑)
     const input = { review: review(curve(40, [[20, 0], [40, 600]]), { 21: 'blunder' }), plies, result: '1-0' as const }
     expect(classifyGame(input)).toMatchObject({ kind: 'turning', ply: 21 })
-    expect(summarizeGame(input)!.headline + summarizeGame(input)!.line).toMatch(/40수째/)
+    expect(summarizeGame(input)!.headline + summarizeGame(input)!.line).toMatch(/40수/)
   })
   it('초반에 밀렸던 쪽이 이기면 완승이 아니다', () => {
     const r = run(60, [[10, -250], [20, 300], [60, 900]], {}, '1-0')
@@ -227,7 +228,7 @@ describe('리뷰가 뒷받침하지 않는 말은 하지 않는다', () => {
       const r = run(60, [[30, 30], [60, 300]], {}, '1-0', side)
       expect(r.kind).toBe('dominant')
       expect(r.text!.line).not.toMatch(/초반부터|초반에 잡은/)
-      expect(r.text!.line).toMatch(/16수 무렵/)
+      expect(r.text!.line).toMatch(/16수쯤/)
       expect(r.text!.headline).not.toMatch(/처음부터/)
     }
   })
@@ -241,15 +242,14 @@ describe('리뷰가 뒷받침하지 않는 말은 하지 않는다', () => {
     const r = run(60, [[60, -500]], {}, '1-0')
     expect(r.kind).toBe('result')
     expect(r.text!.headline + r.text!.line).not.toMatch(/\d/)
-    expect(r.text!.line).toMatch(/흑이 크게 앞섰/)
-    expect(r.text!.line).toMatch(/승부는 백 쪽으로 끝났어요\.$/)
+    expect(r.text!.line).toBe('초반엔 흑이 앞섰는데 결과는 백 승리였어요.')
     expect(r.text!.headline).toBe('백의 승리')
   })
   it('팽팽한 형세에서 기권하면 팽팽했다고 말한다', () => {
     const r = run(60, [[60, 20]], {}, '0-1', 'w')
     expect(r.kind).toBe('result')
     expect(r.text!.headline).toBe('아쉬운 패배')
-    expect(r.text!.line).toMatch(/끝까지 (팽팽|비등)했/)
+    expect(r.text!.line).toMatch(/끝까지 비슷했/)
     expect(run(60, [[60, 20]], {}, '0-1', 'b').text!.headline).toBe('나의 승리')
   })
   it('큰 우세가 있었던 무승부는 균형을 지켰다고 하지 않는다', () => {
@@ -262,12 +262,12 @@ describe('리뷰가 뒷받침하지 않는 말은 하지 않는다', () => {
     const r = run(70, [[20, 0], [40, 600], [60, 300], [70, -700]], {}, '0-1')
     expect(r.kind).not.toMatch(/comeback/)
     expect(r.text!.headline).not.toMatch(/역전|실수|블런더/)
-    expect(r.text!.line).not.toMatch(/역전|실수가|실수로|블런더/)
+    expect(r.text!.line).not.toMatch(/역전|실수가 (?!없)|실수로|블런더/)
   })
   it('표시 없는 수를 실수라고 부르지 않는다', () => {
     // 흑의 52번째 ply가 크게 잃었지만 판정은 좋음
     const r = run(60, [[51, 0], [60, 600]], {}, '1-0')
-    expect(r.text!.headline + r.text!.line).not.toMatch(/실수가|실수로|블런더/)
+    expect(r.text!.headline + r.text!.line).not.toMatch(/실수가 (?!없)|실수로|블런더/)
   })
   it('난타전의 고비는 진 쪽이 가장 크게 잃은 수', () => {
     const plies = game(shuffle(80))
@@ -285,59 +285,54 @@ describe('리뷰가 뒷받침하지 않는 말은 하지 않는다', () => {
     const lost = run(sans.length, [[8, 30], [22, 400], [100, 10000]], {}, '1-0', 'b', sans)
     expect(won.kind).toBe('mate')
     expect(lost.kind).toBe('mate')
-    expect(won.text!.line).toMatch(/체크메이트로 끝냈어요\.$/)
-    expect(lost.text!.line).toMatch(/체크메이트/)
-    expect(lost.text!.line).not.toMatch(/내가 체크메이트/)
+    expect(won.text!.line).toMatch(/^내가 .*끝났어요\.$/)
+    expect(lost.text!.line).toMatch(/메이트를 당했어요\.$/)
   })
   it('긴 판의 체크메이트는 N수 만의라고 하지 않는다', () => {
     const sans = [...shuffle(40), 'e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']
     for (let k = 0; k < 4; k++) {
       const t = run(sans.length, [[8, 30], [22, 400], [100, 10000]], {}, '1-0', [null, 'w', 'b', null][k] as 'w' | 'b' | null, sans).text!
-      expect(t.headline).toBe('24수째 체크메이트로 끝난 판')
+      expect(t.headline).toBe('24수째 메이트')
     }
   })
   it('다른 이야기에 붙는 체크메이트 꼬리는 마지막을 되풀이하지 않는다', () => {
     const sans = [...shuffle(40), 'e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']
     const r = run(sans.length, [[10, 0], [30, -600], [41, -300], [100, 10000]], { 42: 'blunder' }, '1-0', null, sans)
-    expect(r.text!.line).toMatch(/체크메이트로 끝냈어요\.$/)
+    expect(r.text!.line).toMatch(/메이트로 끝났어요\.$/)
   })
 })
 
 describe('설명은 대국 전체 흐름', () => {
   it('꾸준히 앞서 나간 판: 초반 형세, 앞서기 시작한 수, 실수 없이', () => {
     const t = run(60, [[40, 0], [60, 300]], {}, '1-0').text!
-    expect(t.line).toMatch(/^초반(은 (팽팽|비등)했지만|에 (팽팽|비등)하던 판이) 21수 무렵 백(이 크게 앞서 나가| 쪽으로 크게 기운 뒤, 백이) /)
-    expect(t.line).toMatch(/실수 없이 마무리했어요\.$/)
+    expect(t.line).toMatch(/^초반엔 비슷했는데 21수쯤 백(이 확실히 앞섰고 그 뒤로 백은 실수가 없었어요| 쪽으로 넘어갔어요)\.$/)
   })
   it('중반에 앞선 쪽이 바뀌면 그 수를 짚는다', () => {
     const t = run(80, [[30, 0], [62, -200], [70, 0], [80, 400]], {}, '1-0').text!
-    expect(t.line).toMatch(/^16수 무렵부터 흑이 조금 앞섰지만 36수 무렵 백이 (흐름|판)을 뒤집어 /)
+    expect(t.line).toBe('16수쯤부터 흑이 앞섰는데 36수쯤 백이 뒤집었어요.')
   })
   it('실수가 많이 오간 구간은 횟수를 말한다', () => {
     const t = run(60, [[30, 0], [60, -500]], { 27: 'mistake', 30: 'mistake', 33: 'blunder', 36: 'mistake' }, '0-1').text!
-    expect(t.line).toMatch(/실수가 네 번 오간 난타전 끝에|난타전 끝에/)
-    expect(t.line).not.toMatch(/\d번/)
+    expect(t.line).toMatch(/^양쪽 다 실수가 잦았는데 /)
+    expect(t.line).not.toMatch(/번/)
   })
   it('스물다섯 수 이하는 초반과 그 뒤 두 구간', () => {
     const t = run(40, [[30, 0], [40, 400]], {}, '1-0').text!
     expect(t.line).not.toMatch(/중반|막판/)
-    expect(t.line).toMatch(/16수 무렵/)
+    expect(t.line).toMatch(/16수쯤/)
   })
   it('진행 중이면 지금까지로 시작한다', () => {
     const t = run(40, [[30, 0], [40, 500]], {}, '*').text!
-    expect(t.line).toMatch(/^지금까지 /)
-    expect(t.line).toMatch(/16수 무렵/)
+    expect(t.line).toBe('16수쯤부터 백이 앞서 있어요.')
     expect(t.line.split('백이').length).toBeLessThanOrEqual(2)
   })
   it('형세와 결과가 다르면 흐름을 그대로 말하고 결과만 덧붙인다', () => {
     const t = run(60, [[60, -500]], {}, '1-0').text!
-    expect(t.line).toMatch(/^초반부터 흑이 크게 앞섰/)
-    expect(t.line).toMatch(/승부는 백 쪽으로 끝났어요\.$/)
-    expect(t.line).not.toMatch(/실수 없이|뒤집/)
+    expect(t.line).toBe('초반엔 흑이 앞섰는데 결과는 백 승리였어요.')
   })
   it('내 시점이면 나/상대로 쓴다', () => {
     const t = run(80, [[30, 0], [62, -200], [70, 0], [80, 400]], {}, '1-0', 'w').text!
-    expect(t.line).toMatch(/16수 무렵부터 상대가 조금 앞섰지만 36수 무렵 내가/)
+    expect(t.line).toBe('16수쯤부터 밀렸는데 36수쯤 뒤집었어요.')
     expect(t.line).not.toMatch(/백|흑/)
   })
   it('흑이 먼저 두는 FEN도 그 수 번호로 짚는다', () => {
@@ -349,22 +344,22 @@ describe('설명은 대국 전체 흐름', () => {
       plies.push({ san: m.san, uci: m.from + m.to, fen: c.fen() })
     }
     const t = summarizeGame({ review: review(curve(40, [[20, 0], [40, 600]]), { 21: 'blunder' }), plies, result: '1-0' })!
-    expect(t.line).toMatch(/40수 무렵 백(이 크게 앞서| 쪽으로 크게 기운)/)
+    expect(t.line).toMatch(/40수쯤 백(이 확실히 앞섰| 쪽으로 넘어갔)/)
   })
   it('진행 중 내내 팽팽하면 한마디로', () => {
-    expect(run(40, [[40, 0]], {}, '*').text!.line).toBe('지금까지 어느 쪽도 크게 앞서지 않고 팽팽해요.')
-    expect(run(70, [[60, 0], [70, 500]], {}, '*').text!.line).toMatch(/^지금까지 초반과 중반에 (팽팽|비등)하다가 31수 무렵/)
+    expect(run(40, [[40, 0]], {}, '*').text!.line).toMatch(/^(아직은 비슷해요|지금까지 비슷하게 가고 있어요)\.$/)
+    expect(run(70, [[60, 0], [70, 500]], {}, '*').text!.line).toBe('31수쯤부터 백이 앞서 있어요.')
   })
   it('처음부터 앞선 쪽이 체크메이트로 끝내면 한 흐름으로', () => {
     const sans = [...shuffle(16), 'e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']
-    expect(run(sans.length, [[8, 30], [22, 400], [100, 10000]], {}, '1-0', null, sans).text!.line).toBe('초반부터 크게 앞선 백이 그대로 몰아붙여 체크메이트로 끝냈어요.')
+    expect(run(sans.length, [[8, 30], [22, 400], [100, 10000]], {}, '1-0', null, sans).text!.line).toBe('백이 처음부터 밀어붙여서 12수 만에 끝났어요.')
   })
   it('체크메이트로 끝낸 쪽이 문장에 드러난다', () => {
     const sans = [...shuffle(40), 'e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']
     const t = run(sans.length, [[10, 0], [30, -600], [41, -300], [100, 10000]], { 42: 'blunder' }, '1-0', null, sans).text!
-    expect(t.line).toMatch(/백이 [^,]*체크메이트로 끝냈어요\.$/)
+    expect(t.line).toMatch(/백이 .*메이트로 끝났어요\.$/)
   })
   it('무승부는 무승부로 끝났다고 맺는다', () => {
-    expect(run(60, [[60, 0]], {}, '1/2-1/2').text!.line).toMatch(/무승부/)
+    expect(run(60, [[60, 0]], {}, '1/2-1/2').text!.line).toBe('끝까지 큰 실수 없이 비슷하게 갔어요.')
   })
 })

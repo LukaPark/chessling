@@ -44,7 +44,7 @@ it('정확도 위에 대국 요약 제목과 한 문장을 보여준다', () => 
     labels: [null, 'good', 'good', 'blunder', 'best'],
   }
   render(<ReviewSummary review={r} startTurn="w" plies={fool} result="0-1" mySide="b" onRerun={() => {}} />)
-  const headline = screen.getByText(/2수.*체크메이트/)
+  const headline = screen.getByText(/2수.*메이트/)
   expect(headline).toHaveAttribute('data-summary', 'headline')
   expect(screen.getByText(/요\.$/, { selector: '[data-summary="line"]' })).toBeInTheDocument()
   // 요약이 정확도보다 앞에 온다

@@ -253,50 +253,49 @@ type PhraseKey = Exclude<SummaryKind, 'inProgress' | 'dominant' | 'decisive'> | 
 const PHRASES: Record<PhraseKey, Phrases> = {
   turning: {
     headline: [
-      (c) => `${c.N}수째 ${lab(c)} 하나로 갈린 판`,
-      (c) => `${c.N}수째, ${withJosa(lab(c), '이/가')} 가른 승부`,
+      (c) => `${c.N}수에 갈린 판`,
       by(
-        (c) => `${c.N}수째에 기운 승부`,
-        (c) => `${c.N}수째 기회를 잡아낸 승리`,
-        (c) => `${c.N}수째 ${lab(c)} 하나가 아쉬운 판`,
+        (c) => `${c.N}수 ${withJosa(lab(c), '으로/로')} 갈린 판`,
+        (c) => `${c.N}수 ${withJosa(lab(c), '으로/로')} 갈린 판`,
+        (c) => `${c.N}수 ${withJosa(lab(c), '이/가')} 아쉬운 판`,
       ),
     ],
   },
   comeback: {
-    headline: [(c) => `${c.of(c.W)} 역전승, ${c.N}수째가 분수령`, (c) => `끝까지 버틴 ${c.of(c.W)} 역전승`],
+    headline: [by((c) => `${c.of(c.W)} 역전승`, () => '역전승', () => '역전승'), (c) => `${c.N}수에 뒤집힌 판`],
   },
   comebackLoss: {
-    headline: [() => '아쉬운 역전패', (c) => `${c.N}수째에 놓친 승리`, () => '앞서다 내준 한 판'],
+    headline: [() => '아쉬운 역전패', (c) => `${c.N}수에 뒤집힌 판`],
   },
   dominantFlawless: {
-    headline: [(c) => (c.early ? `처음부터 끝까지 ${c.of(c.W)} 흐름` : `${c.N}수째부터 이어진 ${c.of(c.W)} 흐름`), (c) => `${c.of(c.W)} 완승`, (c) => `한 번도 흔들리지 않은 ${c.of(c.W)} 승리`],
+    headline: [(c) => (c.early ? `처음부터 ${c.pre(c.W)} 우세` : `${c.of(c.W)} 승리`), (c) => `${c.of(c.W)} 승리`],
   },
   dominantSoft: {
-    headline: [(c) => `${c.of(c.W)} 승리, ${c.N}수째부터 앞선 판`, (c) => `앞선 흐름을 지켜 낸 ${c.of(c.W)} 승리`],
+    headline: [(c) => `${c.subj(c.W)} 앞서서 이긴 판`, (c) => `${c.of(c.W)} 승리`],
   },
   decisiveSlip: {
-    headline: [(c) => `${c.subj(c.W)} 끝내 가져간 한 판`, (c) => `${c.of(c.W)} 승리, ${c.N}수째가 고비`],
+    headline: [(c) => `${c.N}수에 갈린 판`, (c) => `${c.N}수 ${withJosa(lab(c), '으로/로')} 갈린 판`],
   },
   decisivePlain: {
-    headline: [(c) => `${c.subj(c.W)} 끝내 가져간 한 판`, (c) => `${c.of(c.W)} 승리, ${c.N}수째부터 앞선 판`],
+    headline: [(c) => `${c.N}수에 갈린 판`, (c) => `${c.of(c.W)} 승리`],
   },
   result: {
     headline: [by((c) => `${c.of(c.W)} 승리`, () => '나의 승리', () => '아쉬운 패배')],
   },
   slugfest: {
-    headline: [(c) => `실수가 오간 난타전 끝 ${c.of(c.W)} 승리`, (c) => `엎치락뒤치락, 끝내 ${c.of(c.W)} 승리`],
+    headline: [() => '실수가 잦았던 판', () => '서로 실수가 많았던 판'],
   },
   mate: {
-    headline: [(c) => (c.M <= T.miniatureMoves ? `${c.M}수 만의 체크메이트` : `${c.M}수째 체크메이트로 끝난 판`), (c) => `${c.M}수째 체크메이트로 끝난 판`],
+    headline: [(c) => (c.M <= T.miniatureMoves ? `${c.M}수 만에 메이트` : `${c.M}수째 메이트`)],
   },
   cleanDraw: {
-    headline: [() => '빈틈없는 무승부', () => '끝까지 팽팽했던 무승부'],
+    headline: [() => '비긴 판', () => '큰 실수 없이 비긴 판'],
   },
   messyDraw: {
-    headline: [() => '흔들렸지만 비긴 판', () => '실수 뒤에 지켜 낸 무승부'],
+    headline: [() => '결국 비긴 판', () => '실수가 나왔지만 비긴 판'],
   },
   draw: {
-    headline: [() => '끝내 비긴 판', () => '승부를 가리지 못한 무승부'],
+    headline: [() => '비긴 판', () => '결국 비긴 판'],
   },
 }
 
@@ -339,7 +338,7 @@ function context(input: SummaryInput, facts: SummaryFacts): Ctx {
 }
 
 function inProgressHeadline(c: Ctx, facts: SummaryFacts): string {
-  return facts.winner === null ? '진행 중 · 팽팽해요' : `진행 중 · 지금은 ${c.pre(facts.winner)} 우세`
+  return facts.winner === null ? '진행 중, 지금은 비슷해요' : `진행 중, 지금은 ${c.pre(facts.winner)} 우세`
 }
 
 function phraseKey(facts: SummaryFacts, c: Ctx): PhraseKey {
@@ -362,6 +361,7 @@ export function summarizeGame(input: SummaryInput): GameSummaryText | null {
     win: input.review.positions.slice(0, len).map((p) => winPercent(p.score)),
     ending: endingOf(facts),
     names: c,
+    me: input.mySide ?? null,
     seed: seed >>> 8,
   })
   return { headline, line }

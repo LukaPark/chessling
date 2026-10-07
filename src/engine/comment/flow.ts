@@ -25,6 +25,10 @@ export interface Names {
   subj: (t: Turn) => string
   poss: (t: Turn) => string
   toward: (t: Turn) => string
+  /** 꾸밈: 내 / 상대 / 백 / 흑 */
+  pre: (t: Turn) => string
+  /** 주제: "" (나) / "상대는 " / "백은 " */
+  topic: (t: Turn) => string
 }
 
 export interface FlowInput {
@@ -39,6 +43,8 @@ export interface FlowInput {
     | { kind: 'draw' }
     | { kind: 'inProgress' }
   names: Names
+  /** 내 쪽. 알면 내가 밀린 흐름을 "밀렸어요"처럼 쓴다 */
+  me?: Turn | null
   seed: number
 }
 
@@ -70,9 +76,6 @@ const WORDS: Record<'early' | 'middle' | 'late' | 'after', PhaseWords> = {
   after: { topic: '그 뒤는', at: '그 뒤에', from: '그 뒤부터' },
 }
 
-const COUNT = ['영', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열']
-const countWord = (k: number) => (k < COUNT.length ? COUNT[k] : '여러')
-
 const BAD: ReadonlySet<MoveLabel> = new Set(['mistake', 'blunder'])
 const other = (t: Turn): Turn => (t === 'w' ? 'b' : 'w')
 
@@ -84,7 +87,7 @@ type Beat =
   | { kind: 'lead'; who: Turn; big: boolean; from: string }
   | { kind: 'gain'; who: Turn; big: boolean; N: number }
   | { kind: 'widen'; who: Turn; N: number }
-  | { kind: 'flip'; who: Turn; big: boolean; N: number }
+  | { kind: 'flip'; who: Turn; big: boolean; N: number; ply: number }
   | { kind: 'equalize'; who: Turn; N: number }
   | { kind: 'catchUp'; who: Turn; at: string }
   | { kind: 'transient'; who: Turn; at: string }
@@ -151,137 +154,156 @@ export function flowLine(input: FlowInput): string {
     } else if (prev.lead === null) {
       beats.push({ kind: 'gain', who: end.lead, big: end.big, N: moveNo(end.big && bigAt !== undefined ? bigAt : shift!) })
     } else {
-      beats.push({ kind: 'flip', who: end.lead, big: end.big, N: moveNo(shift!) })
+      beats.push({ kind: 'flip', who: end.lead, big: end.big, N: moveNo(shift!), ply: shift! })
     }
     prev = end
   })
 
   const s = names.subj
-  const size = (big: boolean) => (big ? '크게' : '조금')
+  const me = input.me ?? null
   const v = (k: number) => ((seed >>> (k * 3)) & 1) === 0
 
-  // 시작 마디: 먼저 앞선 쪽을 말하는 마디는 버리지 않는다
+  // 시작 마디와 중심 마디 고르기
   const steady = beats.filter((b) => b.kind !== 'transient')
   const finalLead = levels[n].lead
   const target = input.ending.kind === 'decisive' || input.ending.kind === 'result' ? input.ending.winner : finalLead
-  const later = (from: number) => beats.slice(from + 1)
-  const first = steady[0] ?? { kind: 'even', topic: '끝까지', at: '끝까지', whole: true, phase: 0 }
-  // 중심 마디: 마지막 결정적 변화(뒤집기·앞서기·벌리기), 없으면 다른 변화
-  const rest = later(beats.indexOf(first))
+  const first: Beat = steady[0] ?? { kind: 'even', topic: '끝까지', at: '끝까지', whole: true, phase: 0 }
+  const rest = beats.slice(beats.indexOf(first) + 1)
   const decisive = [...rest].reverse().find((b) => (b.kind === 'flip' || b.kind === 'gain' || b.kind === 'widen') && b.who === target)
   const main: Beat | null = decisive ?? [...rest].reverse().find((b) => b.kind !== 'transient') ?? rest[0] ?? null
-  // 뒤집기·균형 회복이면 그 전에 앞섰던 쪽을 시작 마디로
+  // 뒤집기·따라잡기면 그 전에 앞섰던 쪽을 시작 마디로(누가 먼저 앞섰는지는 버리지 않는다)
   let opening: Beat = first
+  let reversal = false
   if (main && (main.kind === 'flip' || main.kind === 'equalize' || main.kind === 'catchUp')) {
-    const before = steady.slice(0, steady.indexOf(main)).reverse().find((b) => 'who' in b && b.who === other(main.who) && b.kind !== 'catchUp' && b.kind !== 'equalize')
+    const before = steady
+      .slice(0, steady.indexOf(main))
+      .reverse()
+      .find((b) => 'who' in b && b.who === other(main.who) && b.kind !== 'catchUp' && b.kind !== 'equalize')
     if (before) opening = before
+    reversal = true
   }
 
-  // 시작 마디의 모양
-  const leadFrom = (b: Beat) => (b.kind === 'lead' ? b.from : 'N' in b ? `${b.N}수 무렵부터` : '')
-  const open = {
-    jiman: () =>
-      opening.kind === 'even' ? `${opening.topic} ${v(0) ? '비등' : '팽팽'}했지만` : `${leadFrom(opening)} ${s((opening as { who: Turn }).who)} ${size(isBig(opening))} 앞섰지만`,
-    daga: () =>
-      opening.kind === 'even' ? `${opening.at} ${v(0) ? '비등' : '팽팽'}하다가` : `${leadFrom(opening)} ${s((opening as { who: Turn }).who)} ${size(isBig(opening))} 앞서다가`,
+  // 시작 마디: "~는데" / "~다가"
+  const when = (b: Beat) => (b.kind === 'lead' ? '초반엔' : 'N' in b ? `${b.N}수쯤부터` : '')
+  const evenSpan = (b: Beat & { kind: 'even' }) => (b.topic === '끝까지' ? '끝까지' : b.at.endsWith('에') ? `${b.at.slice(0, -1)}엔` : b.at)
+  const openNde = (): string => {
+    if (opening.kind === 'even') return `${evenSpan(opening)} 비슷했는데`
+    const who = (opening as { who: Turn }).who
+    if (me && who !== me) return `${when(opening)} 밀렸는데`
+    return `${when(opening)} ${s(who)} 앞섰는데`
   }
-  const subjOf = (b: Beat | null) => (b && 'who' in b ? b.who : null)
+  const openDaga = (): string => {
+    if (opening.kind === 'even') return opening.topic === '초반은' ? '비슷하게 가다가' : `${evenSpan(opening)} 비슷하게 가다가`
+    const who = (opening as { who: Turn }).who
+    return `${when(opening)} ${s(who)} 앞서다가`
+  }
+  const both = (mistakes as Mistakes | null)?.side === null
+  const busy = mistakes ? (both ? '양쪽 다 실수가 잦았는데' : `${names.poss((mistakes as Mistakes).side!)} 실수가 잦았는데`) : null
 
-  // 중심 마디의 모양. a: "~어"(이어서 끝맺음), jiman: "~지만", now: 현재형 끝맺음
-  const mid = (b: Beat, M: string) => {
+  // 중심 마디: 과거형 어간(뒤에 "어요"·"고"·"지만"이 붙는다)
+  const lostBy = (b: Beat & { kind: 'flip' }) => {
+    const mover = turnOf(plies[b.ply - 1].fen)
+    return mover === other(b.who) && BAD.has(labels[b.ply] as MoveLabel) ? `${names.poss(mover)} 실수로 ` : ''
+  }
+  const stem = (b: Beat): { past: string; ing: string; now: string } => {
     switch (b.kind) {
       case 'gain':
         return {
-          a: `${M}${b.N}수 무렵 ${s(b.who)} ${b.big ? '크게' : '조금씩'} 앞서 나가`,
-          jiman: `${M}${b.N}수 무렵 ${s(b.who)} ${b.big ? '크게' : '조금'} 앞섰지만`,
-          now: `${M}${b.N}수 무렵부터 ${s(b.who)} ${size(b.big)} 앞서 있어요.`,
+          past: `${b.N}수쯤 ${s(b.who)} ${b.big ? '확실히 ' : ''}앞섰`,
+          ing: `${b.N}수쯤 ${s(b.who)} ${b.big ? '확실히 ' : ''}앞서`,
+          now: `${b.N}수쯤부터 ${s(b.who)} 앞서 있어요.`,
         }
       case 'widen':
-        return {
-          a: `${M}${b.N}수 무렵 ${s(b.who)} 격차를 벌려`,
-          jiman: `${M}${b.N}수 무렵 ${s(b.who)} 격차를 벌렸지만`,
-          now: `${M}${b.N}수 무렵부터 ${s(b.who)} 크게 앞서 있어요.`,
-        }
-      case 'flip':
-        return {
-          a: `${M}${b.N}수 무렵 ${s(b.who)} ${v(1) ? '흐름' : '판'}을 뒤집어`,
-          jiman: `${M}${b.N}수 무렵 ${s(b.who)} ${v(1) ? '흐름' : '판'}을 뒤집었지만`,
-          now: `${M}${b.N}수 무렵 ${s(b.who)} ${v(1) ? '흐름' : '판'}을 뒤집어 ${size(b.big)} 앞서 있어요.`,
-        }
+        return { past: `${b.N}수쯤 ${s(b.who)} 확실히 앞섰`, ing: `${b.N}수쯤 ${s(b.who)} 확실히 앞서`, now: `${b.N}수쯤부터 ${s(b.who)} 크게 앞서 있어요.` }
+      case 'flip': {
+        const subject = me === b.who ? '' : `${s(b.who)} `
+        return { past: `${b.N}수쯤 ${lostBy(b)}${subject}뒤집었`, ing: `${b.N}수쯤 ${lostBy(b)}${subject}뒤집어서`, now: `${b.N}수쯤 ${s(b.who)} 뒤집어서 지금은 앞서 있어요.` }
+      }
       case 'equalize':
-        return {
-          a: `${M}${b.N}수 무렵 ${s(b.who)} 균형을 되찾아`,
-          jiman: `${M}${b.N}수 무렵 ${s(b.who)} 균형을 되찾았지만`,
-          now: `${M}${b.N}수 무렵 ${s(b.who)} 균형을 되찾았어요.`,
-        }
+        return { past: `${b.N}수쯤 ${s(b.who)} 따라잡았`, ing: `${b.N}수쯤 ${s(b.who)} 따라잡아서`, now: `${b.N}수쯤 ${s(b.who)} 따라잡아서 지금은 비슷해요.` }
       case 'catchUp':
-        return { a: `${M}${b.at} ${s(b.who)} 따라붙어`, jiman: `${M}${b.at} ${s(b.who)} 따라붙었지만`, now: `${M}${b.at} ${s(b.who)} 따라붙었어요.` }
+        return { past: `${b.at} ${s(b.who)} 차이를 좁혔`, ing: `${b.at} ${s(b.who)} 차이를 좁혀서`, now: `${b.at} ${s(b.who)} 차이를 좁혔어요.` }
       case 'transient':
-        return { a: `${M}${b.at} 한때 ${s(b.who)} 앞서`, jiman: `${M}${b.at} 한때 ${s(b.who)} 앞섰지만`, now: `${M}${b.at} 한때 ${s(b.who)} 앞섰어요.` }
+        return { past: `${b.at} 한때 ${s(b.who)} 앞섰`, ing: `${b.at} 한때 ${s(b.who)} 앞서서`, now: `${b.at} 한때 ${s(b.who)} 앞섰어요.` }
       default:
-        return { a: '', jiman: '', now: '' }
+        return { past: '', ing: '', now: '' }
     }
   }
 
-  const compose = (M: string): string[] => {
+  const candidates = (): string[] => {
     const e = input.ending
-    const out: string[] = []
     if (e.kind === 'inProgress') {
       if (!main) {
-        if (opening.kind === 'even') return ['지금까지 어느 쪽도 크게 앞서지 않고 팽팽해요.']
-        return [`지금까지 ${leadFrom(opening)} ${s((opening as { who: Turn }).who)} ${size(isBig(opening))} 앞서 있어요.`]
+        if (opening.kind === 'even') return [v(0) ? '아직은 비슷해요.' : '지금까지 비슷하게 가고 있어요.']
+        return [`초반부터 ${s((opening as { who: Turn }).who)} 앞서 있어요.`]
       }
-      const m = mid(main, M)
-      if (subjOf(main) === finalLead || main.kind === 'equalize') return [`지금까지 ${open.daga()} ${m.now}`]
-      return [`지금까지 ${open.daga()} ${m.jiman} 지금은 ${finalLead ? `${s(finalLead)} 앞서 있어요.` : '팽팽해요.'}`]
+      return [stem(main).now]
     }
     if (e.kind === 'draw') {
+      const anyBad = range(1, n).some((i) => BAD.has(labels[i] as MoveLabel))
       if (!main) {
-        if (opening.kind === 'even') return [`${opening.topic === '끝까지' ? '끝까지' : opening.at} ${v(0) ? '비등한 흐름 그대로 무승부로 끝났어요.' : '팽팽하게 맞선 끝에 무승부로 끝났어요.'}`]
-        return [`${open.jiman()} 결국 무승부로 끝났어요.`]
+        if (opening.kind === 'even') return [anyBad ? '끝까지 비슷하게 가서 비겼어요.' : '끝까지 큰 실수 없이 비슷하게 갔어요.']
+        return [`${openNde()} 결국 비겼어요.`]
       }
-      const m = mid(main, M)
-      if (main.kind === 'equalize') return [`${open.daga()} ${m.a} 무승부로 끝났어요.`]
-      return [`${open.daga()} ${m.jiman} 결국 무승부로 끝났어요.`]
+      if (main.kind === 'equalize') return [`${openNde()} ${stem(main).ing} 비겼어요.`]
+      return [`${openDaga()} ${stem(main).past}지만 결국 비겼어요.`, `${stem(main).past}지만 결국 비겼어요.`]
     }
     if (e.kind === 'result') {
-      const tail = `승부는 ${names.toward(e.winner)}으로 끝났어요.`
-      if (!main) return [`${open.jiman()} ${tail}`]
-      return [`${open.daga()} ${mid(main, M).jiman} ${tail}`]
+      const tail = `결과는 ${names.pre(e.winner)} 승리였어요.`
+      if (!main) return [`${openNde()} ${tail}`]
+      return [`${openDaga()} ${stem(main).past}는데 ${tail}`, `${stem(main).past}는데 ${tail}`]
     }
     // 이긴 판
     const W = e.winner
+    const M = moveNumberOf(start, n).number
     const clean = range(1, n).every((i) => !(BAD.has(labels[i] as MoveLabel) && turnOf(plies[i - 1].fen) === W))
-    const finish = e.mate ? '체크메이트로 끝냈어요.' : clean ? '실수 없이 마무리했어요.' : '이겼어요.'
-    if (!main) {
-      if (opening.kind !== 'even' && opening.who === W)
-        return [`${leadFrom(opening)} ${size(isBig(opening))} 앞선 ${s(W)} 그대로 ${e.mate ? '몰아붙여 체크메이트로 끝냈어요.' : finish}`]
-      return [`${open.jiman()} 끝내 ${s(W)} ${finish}`]
+    const lostView = me !== null && me !== W
+    const after = e.mate
+      ? '결국 메이트로 끝났어요.'
+      : clean
+        ? v(1)
+          ? `그 뒤로 ${names.topic(W)}실수가 없었어요.`
+          : `${names.topic(W)}끝까지 실수 없이 이겼어요.`
+        : v(1)
+          ? '그대로 이겼어요.'
+          : '결국 이겼어요.'
+    if (!main || ((main.kind === 'widen' || main.kind === 'gain') && main.who === W && lostView)) {
+      // 한쪽이 처음부터 앞섰거나, 내가 밀린 채로 진 판
+      const since =
+        opening.kind === 'lead' && opening.who === W
+          ? '초반부터'
+          : opening.kind === 'gain' && opening.who === W
+            ? `${opening.N}수쯤부터`
+            : !main
+              ? '초반부터'
+              : `${(main as { N: number }).N}수쯤부터`
+      if (lostView) return [`${since} 밀렸고 ${e.mate ? '결국 메이트를 당했어요.' : '끝까지 따라잡지 못했어요.'}`]
+      if (opening.kind !== 'even' && opening.who === W) {
+        if (e.mate && M <= 20) return [`${s(W)} 처음부터 밀어붙여서 ${M}수 만에 끝났어요.`]
+        return [`${s(W)} 초반부터 앞섰고 ${after}`, `${s(W)} 초반부터 앞선 채로 이겼어요.`].filter((x) => !e.mate || x.includes('메이트'))
+      }
+      return [`${openNde()} 결국 ${s(W)} 이겼어요.`]
     }
-    const m = mid(main, M)
-    if (subjOf(main) !== W) return [`${open.daga()} ${m.jiman} 끝내 ${s(W)} ${finish}`]
-    if (main.kind === 'widen' && opening.kind !== 'even' && opening.who === W)
-      return [`${leadFrom(opening)} ${size(isBig(opening))} 앞선 ${s(W)} ${M}${main.N}수 무렵 격차를 벌려 ${finish}`]
-    if (main.kind === 'gain' && opening.kind === 'even') {
-      out.push(`${opening.at} ${v(0) ? '비등' : '팽팽'}하던 판이 ${M}${main.N}수 무렵 ${names.toward(W)}으로 ${main.big ? '크게 ' : ''}기운 뒤, ${s(W)} ${finish}`)
-      out.push(`${open.jiman()} ${m.a} 그대로 ${finish}`)
-      return v(2) ? out : out.reverse()
+    const st = stem(main)
+    if (!('who' in main) || main.who !== W) return [`${openDaga()} ${st.past}지만 결국 ${s(W)} 이겼어요.`]
+    if (reversal) {
+      const short = `${openNde()} ${st.past}어요.`
+      return e.mate ? [`${openNde()} ${st.past}고 ${after}`, short] : [short]
     }
-    return [`${open.jiman()} ${m.a} ${finish}`]
+    const out: string[] = []
+    if (busy) out.push(`${busy} ${st.past}고 ${after}`)
+    else if (opening.kind === 'even') out.push(`${openNde()} ${st.past}고 ${after}`)
+    else if (main.kind === 'widen') out.push(`${s(W)} 초반부터 앞섰는데 ${main.N}수쯤 차이가 더 커졌고 ${after}`)
+    else out.push(`${openDaga()} ${st.past}고 ${after}`)
+    if (opening.kind === 'even' && main.kind === 'gain' && !e.mate && !busy) out.push(`${openNde()} ${main.N}수쯤 ${names.toward(W)}으로 넘어갔어요.`)
+    if (v(2)) out.reverse()
+    // 길이가 넘칠 때만 시작 마디를 뺀다
+    out.push(`${st.past}고 ${after}`)
+    return out
   }
 
-  const M = mistakes as Mistakes | null
-  const mods = M
-    ? M.side === null
-      ? [`실수가 ${countWord(M.total)} 번 오간 난타전 끝에 `, '난타전 끝에 ', '']
-      : [`${names.poss(M.side)} 실수가 ${countWord(M.total)} 번 이어진 끝에 `, `${names.poss(M.side)} 실수가 이어진 끝에 `, '']
-    : ['']
-  const candidates = mods.flatMap(compose)
-  return candidates.find((c) => c.length <= F.lineMax) ?? candidates.reduce((a, b) => (b.length < a.length ? b : a))
-}
-
-function isBig(b: Beat): boolean {
-  return 'big' in b ? b.big : b.kind === 'widen'
+  const all = candidates()
+  return all.find((c) => c.length <= F.lineMax) ?? all.reduce((a, b) => (b.length < a.length ? b : a))
 }
 
 function range(from: number, to: number): number[] {
