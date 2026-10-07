@@ -5,6 +5,7 @@ import type { Ply, Result, Turn } from '../../chess/types'
 import { winPercent } from '../classify'
 import type { MoveLabel } from '../judge'
 import type { GameReview } from '../review'
+import { flowLine, type FlowInput } from './flow'
 import { withJosa } from './korean'
 
 export interface GameSummaryText {
@@ -242,7 +243,6 @@ interface Ctx {
 type Phrase = (c: Ctx) => string
 interface Phrases {
   headline: Phrase[]
-  line: Phrase[]
 }
 const by = (neutral: Phrase, won: Phrase, lost: Phrase): Phrase => (c) => (c.view === 'won' ? won(c) : c.view === 'lost' ? lost(c) : neutral(c))
 /** 실수·블런더가 확실한 수에만 쓴다 */
@@ -261,128 +261,44 @@ const PHRASES: Record<PhraseKey, Phrases> = {
         (c) => `${c.N}수째 ${lab(c)} 하나가 아쉬운 판`,
       ),
     ],
-    line: [
-      (c) => `팽팽하던 판이 ${c.poss(c.L)} ${withJosa(lab(c), '으로/로')} ${c.toward(c.W)}으로 기울었어요.`,
-      by(
-        (c) => `균형이 이어지다 ${c.poss(c.L)} ${withJosa(lab(c), '을/를')} ${c.subj(c.W)} 놓치지 않고 이겼어요.`,
-        (c) => `균형이 이어지다 ${c.poss(c.L)} ${withJosa(lab(c), '을/를')} 놓치지 않고 이겼어요.`,
-        (c) => `잘 버티다 ${c.N}수째 ${withJosa(lab(c), '으로/로')} 흐름을 내줬어요.`,
-      ),
-    ],
   },
   comeback: {
     headline: [(c) => `${c.of(c.W)} 역전승, ${c.N}수째가 분수령`, (c) => `끝까지 버틴 ${c.of(c.W)} 역전승`],
-    line: [
-      (c) => `${c.topic(c.W)}한때 크게 밀렸지만 ${c.poss(c.L)} ${withJosa(lab(c), '을/를')} 놓치지 않고 판을 뒤집었어요.`,
-      (c) => `${c.subj(c.W)} 밀리던 판을 ${c.N}수째 ${c.poss(c.L)} ${withJosa(lab(c), '으로/로')} 뒤집었어요.`,
-    ],
   },
   comebackLoss: {
     headline: [() => '아쉬운 역전패', (c) => `${c.N}수째에 놓친 승리`, () => '앞서다 내준 한 판'],
-    line: [
-      (c) => `내가 앞서 있었는데, ${c.N}수째 ${withJosa(lab(c), '으로/로')} 흐름을 내줬어요.`,
-      (c) => `유리하던 판을 ${c.N}수째 ${lab(c)} 뒤에 지키지 못했어요.`,
-    ],
   },
   dominantFlawless: {
     headline: [(c) => (c.early ? `처음부터 끝까지 ${c.of(c.W)} 흐름` : `${c.N}수째부터 이어진 ${c.of(c.W)} 흐름`), (c) => `${c.of(c.W)} 완승`, (c) => `한 번도 흔들리지 않은 ${c.of(c.W)} 승리`],
-    line: [
-      by(
-        (c) => `${c.topic(c.W)}${c.early ? '초반에' : `${c.N}수째부터`} 잡은 우세를 끝까지 지켜 깔끔하게 이겼어요.`,
-        (c) => `${c.early ? '초반에' : `${c.N}수째부터`} 잡은 우세를 끝까지 지켜 깔끔하게 이겼어요.`,
-        (c) => `${c.early ? '초반' : `${c.N}수째`}부터 밀린 흐름을 끝내 되돌리지 못했어요.`,
-      ),
-      by(
-        (c) => `${c.topic(c.W)}${c.N}수째부터 앞서 나간 뒤로 한 번도 흔들리지 않았어요.`,
-        (c) => `${c.N}수째부터 앞서 나간 뒤로 한 번도 흔들리지 않았어요.`,
-        (c) => `${c.N}수째부터 밀린 흐름을 끝내 뒤집지 못했어요.`,
-      ),
-    ],
   },
   dominantSoft: {
     headline: [(c) => `${c.of(c.W)} 승리, ${c.N}수째부터 앞선 판`, (c) => `앞선 흐름을 지켜 낸 ${c.of(c.W)} 승리`],
-    line: [
-      by(
-        (c) => `${c.topic(c.W)}${c.N}수째부터 앞섰고, 흔들린 때도 있었지만 끝내 지켜 냈어요.`,
-        (c) => `${c.N}수째부터 앞섰고, 흔들린 때도 있었지만 끝내 지켜 냈어요.`,
-        (c) => `${c.N}수째부터 밀린 흐름을 끝내 되돌리지 못했어요.`,
-      ),
-      by(
-        (c) => `${c.topic(c.W)}${c.N}수째부터 잡은 우세를 흔들리면서도 끝까지 지켰어요.`,
-        (c) => `${c.N}수째부터 잡은 우세를 흔들리면서도 끝까지 지켰어요.`,
-        (c) => `${c.N}수째부터 상대가 앞선 흐름을 끝내 뒤집지 못했어요.`,
-      ),
-    ],
   },
   decisiveSlip: {
     headline: [(c) => `${c.subj(c.W)} 끝내 가져간 한 판`, (c) => `${c.of(c.W)} 승리, ${c.N}수째가 고비`],
-    line: [
-      (c) => `${c.N}수째 ${c.poss(c.L)} ${lab(c)} 뒤에 ${c.toward(c.W)}으로 기울었어요.`,
-      (c) => `${c.N}수째 ${c.poss(c.L)} ${withJosa(lab(c), '을/를')} 살려 ${c.subj(c.W)} 이겼어요.`,
-    ],
   },
   decisivePlain: {
     headline: [(c) => `${c.subj(c.W)} 끝내 가져간 한 판`, (c) => `${c.of(c.W)} 승리, ${c.N}수째부터 앞선 판`],
-    line: [(c) => `${c.N}수째부터 ${c.toward(c.W)}으로 기울어 끝났어요.`, (c) => `${c.N}수째부터 ${c.subj(c.W)} 앞섰고, 그 우세로 이겼어요.`],
   },
   result: {
     headline: [by((c) => `${c.of(c.W)} 승리`, () => '나의 승리', () => '아쉬운 패배')],
-    line: [
-      (c) =>
-        c.facts.shape === 'loserAhead'
-          ? `형세는 ${withJosa(c.toward(c.L), '이/가')} 앞서 있었지만, 승부는 ${c.toward(c.W)}으로 끝났어요.`
-          : c.facts.shape === 'even'
-            ? `형세는 끝까지 팽팽했지만, 승부는 ${c.toward(c.W)}으로 끝났어요.`
-            : `형세로는 결판이 나지 않았지만, 승부는 ${c.toward(c.W)}으로 끝났어요.`,
-    ],
   },
   slugfest: {
     headline: [(c) => `실수가 오간 난타전 끝 ${c.of(c.W)} 승리`, (c) => `엎치락뒤치락, 끝내 ${c.of(c.W)} 승리`],
-    line: [
-      by(
-        (c) => `실수가 여러 번 오간 끝에, 마지막에 덜 흔들린 ${c.subj(c.W)} 이겼어요.`,
-        () => '실수가 여러 번 오간 끝에, 끝까지 버텨 이겼어요.',
-        () => '실수가 여러 번 오간 끝에, 끝내 흐름을 되찾지 못했어요.',
-      ),
-      (c) => `양쪽 모두 몇 번씩 흔들렸고, ${c.N}수째 ${c.poss(c.L)} ${withJosa(lab(c), '이/가')} 승부를 갈랐어요.`,
-    ],
   },
   mate: {
     headline: [(c) => (c.M <= T.miniatureMoves ? `${c.M}수 만의 체크메이트` : `${c.M}수째 체크메이트로 끝난 판`), (c) => `${c.M}수째 체크메이트로 끝난 판`],
-    line: [
-      by(
-        (c) => `${c.subj(c.W)} ${c.name(c.L)} 킹을 몰아붙여 체크메이트로 끝냈어요.`,
-        () => '상대 킹 쪽을 몰아붙여 체크메이트로 끝냈어요.',
-        () => '내 킹이 몰려 체크메이트로 끝났어요.',
-      ),
-      by(
-        (c) => `${c.subj(c.W)} ${c.name(c.L)} 킹이 피할 곳을 모두 막아 끝냈어요.`,
-        () => '상대 킹이 피할 곳을 모두 막아 끝냈어요.',
-        () => '내 킹이 피할 곳을 찾지 못하고 끝났어요.',
-      ),
-    ],
   },
   cleanDraw: {
     headline: [() => '빈틈없는 무승부', () => '끝까지 팽팽했던 무승부'],
-    line: [() => '양쪽 모두 큰 실수 없이 끝까지 균형을 지켰어요.', () => '누구도 크게 흔들리지 않고 비긴 판이에요.'],
   },
   messyDraw: {
     headline: [() => '흔들렸지만 비긴 판', () => '실수 뒤에 지켜 낸 무승부'],
-    line: [
-      (c) => `${c.N}수째 ${c.poss(c.L)} ${withJosa(lab(c), '으로/로')} 판이 기울었지만, 끝내 비겼어요.`,
-      (c) => `${c.N}수째 ${c.poss(c.L)} ${withJosa(lab(c), '이/가')} 있었지만, 승부는 무승부로 끝났어요.`,
-    ],
   },
   draw: {
     headline: [() => '끝내 비긴 판', () => '승부를 가리지 못한 무승부'],
-    line: [
-      (c) => `${withJosa(c.toward(c.L), '이/가')} 앞선 때도 있었지만, 끝내 비겼어요.`,
-      (c) => `${c.N}수째 무렵엔 ${withJosa(c.toward(c.L), '이/가')} 앞선 형세였지만, 무승부로 끝났어요.`,
-    ],
   },
 }
-
-const MATE_TAIL = ' 체크메이트로 끝났어요.'
 
 function hash(s: string): number {
   let h = 2166136261
@@ -422,20 +338,8 @@ function context(input: SummaryInput, facts: SummaryFacts): Ctx {
   }
 }
 
-function inProgress(c: Ctx, facts: SummaryFacts, seed: number): GameSummaryText {
-  const leader = facts.winner
-  if (leader === null) {
-    const line =
-      facts.ply !== null
-        ? `${c.N}수째 ${c.poss(c.L)} ${withJosa(lab(c), '이/가')} 있었지만 아직 팽팽해요.`
-        : ['아직 큰 실수 없이 이어지고 있어요.', '양쪽 모두 아직 크게 흔들리지 않았어요.'][seed % 2]
-    return { headline: '진행 중 · 팽팽해요', line }
-  }
-  const line =
-    facts.ply !== null && c.L !== leader
-      ? `${c.N}수째 ${c.poss(c.L)} ${lab(c)} 뒤에 ${c.subj(leader)} 앞서 있어요.`
-      : `${c.subj(leader)} 조금씩 앞서 나가고 있어요.`
-  return { headline: `진행 중 · 지금은 ${c.pre(leader)} 우세`, line }
+function inProgressHeadline(c: Ctx, facts: SummaryFacts): string {
+  return facts.winner === null ? '진행 중 · 팽팽해요' : `진행 중 · 지금은 ${c.pre(facts.winner)} 우세`
 }
 
 function phraseKey(facts: SummaryFacts, c: Ctx): PhraseKey {
@@ -444,16 +348,36 @@ function phraseKey(facts: SummaryFacts, c: Ctx): PhraseKey {
   return facts.kind as PhraseKey
 }
 
-/** 리뷰가 끝난 대국을 제목 한 줄과 설명 한 문장으로 요약한다. 같은 대국이면 같은 문장 */
+/** 리뷰가 끝난 대국을 제목 한 줄과, 대국 전체 흐름을 담은 설명 한 문장으로 요약한다. 같은 대국이면 같은 문장 */
 export function summarizeGame(input: SummaryInput): GameSummaryText | null {
   const facts = classifyGame(input)
   if (!facts) return null
   const c = context(input, facts)
   const seed = hash(input.plies.map((p) => p.san ?? '').join(' '))
-  if (facts.kind === 'inProgress') return inProgress(c, facts, seed)
-  const table = PHRASES[phraseKey(facts, c)]
-  const headline = table.headline[seed % table.headline.length](c)
-  let line = table.line[(seed >>> 8) % table.line.length](c)
-  if (facts.mate && facts.kind !== 'mate' && (line + MATE_TAIL).length <= T.lineMax) line += MATE_TAIL
+  const headline = facts.kind === 'inProgress' ? inProgressHeadline(c, facts) : PHRASES[phraseKey(facts, c)].headline[seed % PHRASES[phraseKey(facts, c)].headline.length](c)
+  const len = Math.min(input.plies.length, input.review.positions.length)
+  const line = flowLine({
+    plies: input.plies.slice(0, len),
+    labels: input.review.labels,
+    win: input.review.positions.slice(0, len).map((p) => winPercent(p.score)),
+    ending: endingOf(facts),
+    names: c,
+    seed: seed >>> 8,
+  })
   return { headline, line }
+}
+
+function endingOf(facts: SummaryFacts): FlowInput['ending'] {
+  switch (facts.kind) {
+    case 'inProgress':
+      return { kind: 'inProgress' }
+    case 'cleanDraw':
+    case 'messyDraw':
+    case 'draw':
+      return { kind: 'draw' }
+    case 'result':
+      return { kind: 'result', winner: facts.winner! }
+    default:
+      return { kind: 'decisive', winner: facts.winner!, mate: facts.mate }
+  }
 }
