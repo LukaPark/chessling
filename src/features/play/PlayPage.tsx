@@ -129,31 +129,62 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
         {engineError !== null && <Banner tone="warn">엔진을 실행할 수 없어요. 새로고침해 주세요.</Banner>}
       </header>
 
-      <div className={cx(g.stage, s.stage)}>
-        <p className={s.status}>
-          {status.over ? (
-            `${status.result} · ${REASON_TEXT[status.reason!]}`
-          ) : engineTurn ? (
-            <>
-              <Icon icon={LoaderCircle} size={18} className={spin} />
-              엔진이 생각 중…
-            </>
-          ) : (
-            <>
-              <span className={s.turnDot} aria-hidden="true" />내 차례
-            </>
-          )}
-        </p>
-        <div className={g.boardWrap}>
-          <Board
-            fen={status.fen}
-            orientation={fork.playerColor}
-            lastMoveUci={status.lastMove}
-            check={status.check}
-            shapes={shapes}
-            movable={{ color: fork.playerColor, dests, onMove }}
-          />
+      <div className={g.boardCol}>
+        <div className={cx(g.stage, s.stage)}>
+          <p className={s.status}>
+            {status.over ? (
+              `${status.result} · ${REASON_TEXT[status.reason!]}`
+            ) : engineTurn ? (
+              <>
+                <Icon icon={LoaderCircle} size={18} className={spin} />
+                엔진이 생각 중…
+              </>
+            ) : (
+              <>
+                <span className={s.turnDot} aria-hidden="true" />내 차례
+              </>
+            )}
+          </p>
+          <div className={g.boardWrap}>
+            <Board
+              fen={status.fen}
+              orientation={fork.playerColor}
+              lastMoveUci={status.lastMove}
+              check={status.check}
+              shapes={shapes}
+              movable={{ color: fork.playerColor, dests, onMove }}
+            />
+          </div>
         </div>
+        <ControlBar label="대국 조작">
+          <BarButton
+            icon={Undo2}
+            label="무르기"
+            caption
+            disabled={!canTakeback}
+            onClick={() => {
+              play.stop()
+              save(takeback(forkRef.current))
+            }}
+          />
+          <BarButton
+            icon={Flag}
+            label="기권"
+            caption
+            disabled={status.over}
+            onClick={() => {
+              if (window.confirm('기권할까요?')) save(resign(forkRef.current))
+            }}
+          />
+          <BarButton icon={Gauge} label={`엔진 세기 (Elo ${fork.engineElo})`} caption={`Elo ${fork.engineElo}`} onClick={() => setEloOpen(true)} />
+          <BarButton icon={BadgeCheck} label="수 평가" caption pressed={evalOn} onClick={() => setEvalOn(!evalOn)} />
+          <BarButton
+            icon={Download}
+            label="PGN 내보내기"
+            caption="PGN"
+            onClick={() => downloadText(`chessling-${fork.id.slice(0, 8)}.pgn`, forkToPgn(fork))}
+          />
+        </ControlBar>
       </div>
 
       <div className={g.panel}>
@@ -171,36 +202,6 @@ function ForkGame({ initial }: { initial: ForkRecord }) {
             <p className={g.note}>연습용 분기라 원래 대국 수순을 보여 주지 않아요.</p>
           ))}
       </div>
-
-      <ControlBar label="대국 조작" className={g.controls}>
-        <BarButton
-          icon={Undo2}
-          label="무르기"
-          caption
-          disabled={!canTakeback}
-          onClick={() => {
-            play.stop()
-            save(takeback(forkRef.current))
-          }}
-        />
-        <BarButton
-          icon={Flag}
-          label="기권"
-          caption
-          disabled={status.over}
-          onClick={() => {
-            if (window.confirm('기권할까요?')) save(resign(forkRef.current))
-          }}
-        />
-        <BarButton icon={Gauge} label={`엔진 세기 (Elo ${fork.engineElo})`} caption={`Elo ${fork.engineElo}`} onClick={() => setEloOpen(true)} />
-        <BarButton icon={BadgeCheck} label="수 평가" caption pressed={evalOn} onClick={() => setEvalOn(!evalOn)} />
-        <BarButton
-          icon={Download}
-          label="PGN 내보내기"
-          caption="PGN"
-          onClick={() => downloadText(`chessling-${fork.id.slice(0, 8)}.pgn`, forkToPgn(fork))}
-        />
-      </ControlBar>
 
       {eloOpen && (
         <Dialog variant="sheet" title="엔진 세기" onClose={() => setEloOpen(false)}>

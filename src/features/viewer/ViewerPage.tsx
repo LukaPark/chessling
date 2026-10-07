@@ -268,6 +268,20 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
     return [...[...ucis].map(bestMoveArrow), ...extra]
   }, [hint, hintUci, lineUci, guide])
 
+  const controls = (
+    <ViewerControls
+      ply={ply}
+      last={last}
+      onGo={go}
+      onOpenMoves={() => setMovesOpen(true)}
+      onFork={() => setForkTarget(forkHere(ply))}
+      forkDisabled={terminal !== null}
+      hint={hint}
+      onHint={() => setHint((h) => !h)}
+      disabled={quizzing}
+    />
+  )
+
   return (
     <div className={g.page}>
       <ViewerHeader record={record} onRefresh={onRefresh} onFlip={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
@@ -282,17 +296,21 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
           plies={plies}
           orientation={orientation}
           evaluate={evaluate}
+          controls={controls}
           onFinish={(r) => finishQuiz(activeScene, r)}
           onContinue={() => leaveQuiz(activeScene, true)}
           onQuit={() => leaveQuiz(activeScene, false)}
         />
       ) : (
         <>
-          <div className={g.stage}>
-            <EvalBar score={score} orientation={orientation} />
-            <div className={g.boardWrap} data-testid="board-swipe" {...swipe}>
-              <Board fen={fen} orientation={orientation} lastMoveUci={plies[ply].uci} check={isCheck(fen)} shapes={shapes} />
+          <div className={g.boardCol}>
+            <div className={g.stage}>
+              <EvalBar score={score} orientation={orientation} />
+              <div className={g.boardWrap} data-testid="board-swipe" {...swipe}>
+                <Board fen={fen} orientation={orientation} lastMoveUci={plies[ply].uci} check={isCheck(fen)} shapes={shapes} />
+              </div>
             </div>
+            {controls}
           </div>
 
           <div className={g.panel}>
@@ -334,19 +352,6 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
           </div>
         </>
       )}
-
-      <ViewerControls
-        className={g.controls}
-        ply={ply}
-        last={last}
-        onGo={go}
-        onOpenMoves={() => setMovesOpen(true)}
-        onFork={() => setForkTarget(forkHere(ply))}
-        forkDisabled={terminal !== null}
-        hint={hint}
-        onHint={() => setHint((h) => !h)}
-        disabled={quizzing}
-      />
 
       {movesOpen && (
         <Dialog variant="sheet" title="기보" onClose={() => setMovesOpen(false)}>
