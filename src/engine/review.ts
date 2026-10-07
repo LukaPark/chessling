@@ -66,10 +66,17 @@ export function judgePly(plies: Ply[], positions: ReviewedPosition[], i: number,
     bestUci: before.best,
     secondBefore: before.second,
     legalMoves: before.legalMoves,
-    sacrifice: isSacrifice(plies[i - 1].fen, ply.uci, positions[i].pv),
+    sacrifice: sacrificeAt(plies, positions, i),
     previousLabel,
     isRecapture: isRecapture(plies[i - 1], ply),
   })
+}
+
+/** i번째 수가 기물을 내주는 희생인가(그 수 뒤 최선 수순까지 보고 판단) */
+export function sacrificeAt(plies: Ply[], positions: ReviewedPosition[], i: number): boolean {
+  const ply = plies[i]
+  if (i < 1 || !ply?.uci || !positions[i]) return false
+  return isSacrifice(plies[i - 1].fen, ply.uci, positions[i].pv)
 }
 
 /** 직전 수가 잡은 칸에서 곧바로 되잡는 수인가 */

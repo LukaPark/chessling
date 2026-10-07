@@ -1,6 +1,8 @@
 import { RotateCcw } from 'lucide-react'
-import type { Turn } from '../../chess/types'
+import { useMemo } from 'react'
+import type { Ply, Result, Turn } from '../../chess/types'
 import { glyphColor } from '../../components/judgment.css'
+import { summarizeGame } from '../../engine/comment/summary'
 import { countJudgments, JUDGMENT_META, type MoveLabel } from '../../engine/judge'
 import type { GameReview } from '../../engine/review'
 import * as v from '../../styles/features/viewer.css'
@@ -13,18 +15,36 @@ const fmt = (x: number | null) => (x === null ? '-' : `${x.toFixed(1)}%`)
 export function ReviewSummary({
   review,
   startTurn,
+  plies,
+  result,
+  mySide = null,
   onRerun,
   quiz,
 }: {
   review: GameReview
   startTurn: Turn
+  plies: Ply[]
+  result: Result
+  /** 내 대국이면 내 쪽. 요약을 나/상대로 쓴다 */
+  mySide?: Turn | null
   onRerun: () => void
   /** 푼 장면 수 / 전체 장면 수. 장면이 없으면 넘기지 않는다 */
   quiz?: { solved: number; total: number }
 }) {
   const counts = countJudgments(review.labels, startTurn)
+  const text = useMemo(() => summarizeGame({ review, plies, result, mySide }), [review, plies, result, mySide])
   return (
     <div className={v.summary}>
+      {text && (
+        <div className={v.gameSummary}>
+          <p className={v.gameSummaryHeadline} data-summary="headline">
+            {text.headline}
+          </p>
+          <p className={v.gameSummaryCaption} data-summary="caption">
+            {text.caption}
+          </p>
+        </div>
+      )}
       <div className={v.accuracy}>
         <p className={v.accuracyItem}>
           <span className={v.accuracyLabel}>백 정확도</span>

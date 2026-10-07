@@ -313,6 +313,9 @@ function LoadedViewer({ gameRef, record, plies, onRefresh }: LoadedViewerProps) 
               <ReviewSummary
                 review={review.review}
                 startTurn={turnOf(plies[0].fen)}
+                plies={plies}
+                result={record.result}
+                mySide={mySide}
                 onRerun={runReview}
                 quiz={scenes.length > 0 ? { solved: solvedScenes, total: scenes.length } : undefined}
               />

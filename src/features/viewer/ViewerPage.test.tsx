@@ -169,6 +169,13 @@ describe('ViewerPage', () => {
     expect(screen.getByRole('img', { name: '평가 그래프' })).toBeInTheDocument()
   })
 
+  it('리뷰가 끝나면 한줄평과 캡션을 보여준다', async () => {
+    renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
+    fireEvent.click(await screen.findByRole('button', { name: '리뷰 실행' }))
+    expect(await screen.findByText('백 승 · 17수 메이트')).toHaveAttribute('data-summary', 'caption')
+    expect(document.querySelector('[data-summary="headline"]')?.textContent).toMatch(/[가-힣]/)
+  })
+
   it('퀴즈: 장면 포지션에서 버튼을 눌러 보드로 풀고, 결과를 저장한다', async () => {
     const { store } = renderRoute('/game/classic/opera-game', { engines: { analysis: analysisEngine() } })
     await screen.findByRole('region', { name: '이번 수 판정' })
