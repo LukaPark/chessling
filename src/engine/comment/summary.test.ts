@@ -4,7 +4,9 @@ import type { Ply, Result } from '../../chess/types'
 import { BANNED } from '../../data/annotations/validate'
 import type { MoveLabel } from '../judge'
 import type { GameReview } from '../review'
-import { classifyGame, HEADLINES, shapeOf, summarizeGame, type GameSummaryText, type SummaryInput } from './summary'
+import { pgnToPlies } from '../../chess/pgn'
+import classics from '../../data/classics.json'
+import { classifyGame, HEADLINES, headlineIndex, shapeOf, summarizeGame, type SummaryInput } from './summary'
 
 const SHUFFLE = ['Nc3', 'Nc6', 'Nb1', 'Nb8']
 
@@ -143,11 +145,12 @@ describe('한줄평', () => {
     const heads = new Set([60, 61, 62, 63, 64, 65, 66, 67, 68, 69].map((n) => run(n, [[44, 20], [n, -600]], { 45: 'blunder' }, '0-1').text!.headline))
     expect(heads.size).toBeGreaterThanOrEqual(4)
   })
-  it('문장 묶음마다 다섯 개 이상, 모두 규칙을 지킨다', () => {
+  it('문장 묶음마다 일곱 개 이상, 모두 규칙을 지킨다', () => {
     const CLICHE = /난타전|격차를 벌려|한 번도 흔들리지|끝내 가져간|분수령|깔끔|빈틈없|치열한 승부|명승부|드라마|손에 땀|역사에 남|완승/
     for (const [shape, pools] of Object.entries(HEADLINES)) {
       for (const [view, list] of Object.entries(pools) as [string, string[]][]) {
-        expect(list.length, `${shape}.${view}`).toBeGreaterThanOrEqual(5)
+        expect(list.length, `${shape}.${view}`).toBeGreaterThanOrEqual(7)
+        expect(new Set(list).size, `${shape}.${view} 중복`).toBe(list.length)
         for (const h of list) {
           expect(h).not.toMatch(/\d/)
           expect(h.length, h).toBeLessThanOrEqual(40)
@@ -179,5 +182,46 @@ describe('캡션', () => {
     expect(run(60, [[44, 20], [60, -600]], { 45: 'blunder' }, '0-1', 'w').text!.caption).toBe('내 패배 · 23수에 갈림')
     expect(run(40, [[37, 0], [40, 500]], { 38: 'mistake' }, '*', 'w').text!.caption).toBe('진행 중 · 지금은 내 우세')
     expect(run(60, [[60, 10]], {}, '1/2-1/2', 'w').text!.caption).toBe('무승부')
+  })
+})
+
+describe('희생으로 이긴 판', () => {
+  // 백이 23수째(ply 45)에 둔 수를 탁월(!!)로 판정
+  it('이긴 쪽에 탁월한 수가 있으면 sacrifice가 quick·squeeze·sudden보다 앞선다', () => {
+    expect(run(60, [[45, 20], [60, 600]], { 47: 'brilliant', 46: 'blunder' }, '1-0').shape).toBe('sacrifice')
+    expect(run(60, [[10, 30], [20, 300], [60, 900]], { 13: 'brilliant' }, '1-0').shape).toBe('sacrifice')
+  })
+  it('진 쪽의 탁월한 수로는 sacrifice가 아니다', () => {
+    expect(run(60, [[45, 20], [60, 600]], { 44: 'brilliant', 46: 'blunder' }, '1-0').shape).toBe('sudden')
+  })
+  it('역전·무승부·진행 중·형세와 다른 결과에는 끼어들지 않는다', () => {
+    expect(run(70, [[20, 0], [40, 600], [60, 300], [70, -700]], { 61: 'blunder', 62: 'brilliant' }, '0-1').shape).toBe('comeback')
+    expect(run(60, [[60, 10]], { 13: 'brilliant' }, '1/2-1/2').shape).toBe('tightDraw')
+    expect(run(40, [[40, 0]], { 13: 'brilliant' }, '*').shape).toBe('ongoing')
+    expect(run(60, [[60, 20]], { 14: 'brilliant' }, '0-1').shape).toBe('offBoard')
+  })
+  it('리뷰가 희생이라고 본 좋은 수도 sacrifice', () => {
+    // 1.e4 e5 2.Bc4 Nc6 3.Bxf7+ Kxf7: 백이 비숍을 내준다
+    const sans = ['e4', 'e5', 'Bc4', 'Nc6', 'Bxf7+', 'Kxf7', ...Array.from({ length: 40 }, (_, k) => ['Nc3', 'Nf6', 'Nb1', 'Ng8'][k % 4])]
+    const i = input(0, [[60, 400]], {}, '1-0', null, sans)
+    i.review.labels[5] = 'best'
+    i.review.positions[5].pv = ['e8f7']
+    expect(shapeOf(i)).toBe('sacrifice')
+    i.review.labels[5] = 'mistake'
+    expect(shapeOf(i)).not.toBe('sacrifice')
+  })
+  it('제목은 sacrifice 묶음에서, 캡션은 그대로', () => {
+    const r = run(60, [[45, 20], [60, 600]], { 47: 'brilliant', 46: 'blunder' }, '1-0')
+    expect(HEADLINES.sacrifice.neutral).toContain(r.text!.headline)
+    expect(r.text!.caption).toBe('백 승 · 23수에 갈림')
+    expect(HEADLINES.sacrifice.lost).toContain(run(60, [[45, 20], [60, 600]], { 47: 'brilliant', 46: 'blunder' }, '1-0', 'b').text!.headline)
+  })
+})
+
+describe('반복 줄이기', () => {
+  it('예시 명경기 여덟 판은 같은 모양이어도 서로 다른 문장을 고른다', () => {
+    const slugs = ['opera-game', 'immortal-game', 'evergreen-game', 'byrne-fischer-1956', 'fischer-spassky-1972-g6', 'deep-blue-kasparov-1997-g6', 'kasparov-topalov-1999', 'capablanca-marshall-1918']
+    const picks = slugs.map((slug) => headlineIndex(pgnToPlies((classics as { slug: string; pgn: string }[]).find((g) => g.slug === slug)!.pgn), 8))
+    expect(new Set(picks).size).toBe(8)
   })
 })

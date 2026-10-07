@@ -4,7 +4,7 @@ import { turnOf } from '../../chess/pgn'
 import type { Ply, Result, Turn } from '../../chess/types'
 import { winPercent } from '../classify'
 import type { MoveLabel } from '../judge'
-import type { GameReview } from '../review'
+import { sacrificeAt, type GameReview } from '../review'
 
 export interface GameSummaryText {
   /** 감상 한 문장 */
@@ -209,7 +209,7 @@ export function classifyGame(input: SummaryInput): SummaryFacts | null {
 // ── 한줄평 ──────────────────────────────────────────────
 
 /** 판의 모양: 한줄평 문장 묶음을 고르는 기준 */
-export type SummaryShape = 'quick' | 'squeeze' | 'hardWon' | 'sudden' | 'comeback' | 'chaos' | 'offBoard' | 'tightDraw' | 'messyDraw' | 'ongoing'
+export type SummaryShape = 'sacrifice' | 'quick' | 'squeeze' | 'hardWon' | 'sudden' | 'comeback' | 'chaos' | 'offBoard' | 'tightDraw' | 'messyDraw' | 'ongoing'
 
 /** 우세를 지킨 채 이 수(full move) 안에 끝난 승리는 짧은 판 */
 export const QUICK_MOVES = 25
@@ -219,6 +219,36 @@ export const QUICK_MOVES = 25
  * 백/흑이나 수 번호는 넣지 않는다(그건 캡션 몫).
  */
 export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]; lost?: string[] }> = {
+  sacrifice: {
+    neutral: [
+      '아낌없이 내주고 끝내 이긴 판',
+      '내준 만큼 더 깊이 파고들었어요.',
+      '잃는 게 두렵지 않았던 공격.',
+      '기물보다 시간을 산 판',
+      '내주는 수가 가장 날카로웠던 판',
+      '버린 기물이 길을 열어 준 판',
+      '아끼지 않은 쪽이 이겼어요.',
+      '손해처럼 보이던 수가 판을 바꿨어요.',
+    ],
+    won: [
+      '아낌없이 내주고 얻은 승리예요.',
+      '내준 기물이 길을 열어 줬어요.',
+      '잃는 게 두렵지 않았어요.',
+      '과감하게 내준 수가 통했어요.',
+      '기물보다 공격을 택한 판이에요.',
+      '내준 만큼 더 깊이 들어갔어요.',
+      '손해 같던 수가 승부수였어요.',
+    ],
+    lost: [
+      '상대의 희생 앞에 길이 막혔어요.',
+      '상대가 내준 만큼 더 깊이 들어왔어요.',
+      '과감한 한 수에 흐름을 뺏겼어요.',
+      '상대의 희생이 한 수 빨랐어요.',
+      '상대의 과감한 수를 버텨 내지 못했어요.',
+      '아낌없이 내준 상대가 한 발 앞섰어요.',
+      '내주는 수 하나가 판을 바꿔 놓았어요.',
+    ],
+  },
   quick: {
     neutral: [
       '짧고 굵게, 한 번 잡은 흐름을 끝까지 놓지 않은 판',
@@ -227,6 +257,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '망설임 없이 달려가 일찍 끝을 본 판',
       '길게 갈 이유가 없었던 판.',
       '방향이 정해지자 망설임이 없었어요.',
+      '숨 돌릴 새도 없이 끝난 판',
+      '빠르게 와서 빠르게 끝냈어요.',
     ],
     won: [
       '거침없었어요. 상대가 숨 고를 틈도 없이.',
@@ -234,6 +266,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '망설임 없이 밀고 나가 일찍 끝냈어요.',
       '짧고 굵게, 내 판이었어요.',
       '한 번 잡은 기세가 끝까지 갔어요.',
+      '숨 돌릴 틈 없이 몰아쳤어요.',
+      '길게 끌 필요가 없었어요.',
     ],
     lost: [
       '오늘은 상대가 한 수 위였어요.',
@@ -241,6 +275,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '빨리 끝났지만 배울 게 많은 판이에요.',
       '상대의 기세가 너무 빨랐어요.',
       '다음엔 첫걸음부터 더 단단하게 가 봐요.',
+      '정신 차리기 전에 끝나 버렸어요.',
+      '짧았지만 다음 판의 숙제가 생겼어요.',
     ],
   },
   squeeze: {
@@ -251,6 +287,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '천천히, 그러나 확실하게.',
       '조용한 압박이 결국 판을 정했어요.',
       '티 나지 않게 앞서 나가 그대로 끝난 판',
+      '서두른 적 없이 끝까지 간 판',
+      '조금씩, 아주 조금씩 기울어 간 판',
     ],
     won: [
       '서두르지 않고 차곡차곡 쌓아 올린 승리예요.',
@@ -258,6 +296,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '천천히, 그러나 확실하게 이겼어요.',
       '한 칸씩 숨통을 조여 간 판이에요.',
       '내 걸음대로 끝까지 간 판이에요.',
+      '급할 것 없이 한 걸음씩 갔어요.',
+      '참을성 있게 쌓아 올린 판이에요.',
     ],
     lost: [
       '조금씩 숨이 막혀 오던 판이에요.',
@@ -265,6 +305,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '상대가 조금씩 길을 막아 왔어요.',
       '버텼지만 조금씩 밀려났어요.',
       '티 나지 않게 조여 온 상대가 강했어요.',
+      '한 걸음씩 밀려난 판이에요.',
+      '어디가 시작이었는지 다시 볼 만해요.',
     ],
   },
   hardWon: {
@@ -274,6 +316,9 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '매끄럽진 않았지만 결국 닿은 판',
       '울퉁불퉁한 길 끝에 도착한 승리.',
       '삐걱거려도 멈추지 않았던 판',
+      '넘어질 뻔했지만 끝까지 걸어간 판',
+      '실수를 안고도 앞으로 나아간 판',
+      '흠은 있어도 결과는 분명했던 판',
     ],
     won: [
       '삐걱거려도 멈추지 않았어요.',
@@ -281,6 +326,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '매끄럽진 않아도 이긴 판이에요.',
       '흔들렸지만 놓지 않았어요.',
       '고비를 넘기고 얻은 승리예요.',
+      '실수도 있었지만 결국 내 판이었어요.',
+      '넘어질 뻔했지만 버텼어요.',
     ],
     lost: [
       '기회가 몇 번 있었던 판이에요.',
@@ -288,6 +335,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '아까운 장면이 많았던 판이에요.',
       '조금만 더 버텼다면 싶은 판이에요.',
       '끝까지 해볼 만했던 판이에요.',
+      '상대의 실수를 살렸다면 싶은 판이에요.',
+      '기회가 왔다 갔다 한 판이에요.',
     ],
   },
   sudden: {
@@ -298,6 +347,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '길게 이어진 균형, 그리고 단 한 번의 틈.',
       '한 수가 모든 걸 바꾼 판',
       '조용하던 판이 한순간에 기울었어요.',
+      '잔잔하던 수면에 돌 하나가 떨어진 판',
+      '균형을 깬 건 단 한 수였어요.',
     ],
     won: [
       '오래 기다린 단 한 번의 틈을 놓치지 않았어요.',
@@ -305,6 +356,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '팽팽하던 줄을 먼저 끊어 낸 판이에요.',
       '참고 기다린 보람이 있었어요.',
       '한 번의 기회면 충분했어요.',
+      '기다림 끝에 찾아온 한 번이었어요.',
+      '조용히 기다리다 한 번에 잡았어요.',
     ],
     lost: [
       '잘 버티다 한 번에 무너졌어요.',
@@ -312,6 +365,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '팽팽하게 잘 맞서던 판이라 더 아쉬워요.',
       '한 수만 다시 둘 수 있다면 싶은 판이에요.',
       '거의 다 왔는데, 한 번이 모자랐어요.',
+      '한 번의 흔들림이 끝까지 갔어요.',
+      '오래 잘 버틴 판이라 더 아까워요.',
     ],
   },
   comeback: {
@@ -322,6 +377,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '밀리고 또 밀리다 한 번에 뒤집었어요.',
       '벼랑 끝에서 돌아 나온 판',
       '기울었던 판이 거꾸로 쏟아졌어요.',
+      '기울어진 판을 다시 세운 판',
+      '지는 줄 알았던 쪽이 마지막에 웃었어요.',
     ],
     won: [
       '포기하지 않은 덕분이에요.',
@@ -329,6 +386,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '밀려도 끝까지 버틴 보람이 있었어요.',
       '다 진 줄 알았던 판을 뒤집었어요.',
       '끝까지 기회를 기다린 판이에요.',
+      '기울어진 판을 다시 세웠어요.',
+      '버티고 기다린 끝에 뒤집었어요.',
     ],
     lost: [
       '다 잡은 판이 손에서 빠져나갔어요.',
@@ -336,6 +395,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '한 번 흔들린 게 끝까지 이어졌어요.',
       '잘 싸우고도 뒤집힌 판이에요.',
       '이길 수 있었던 판, 다음엔 꼭.',
+      '앞서다 놓친 판, 다음엔 끝까지.',
+      '이기던 판을 지키지 못했어요.',
     ],
   },
   chaos: {
@@ -346,6 +407,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '넘어지고 또 넘어지며 끝까지 간 판',
       '정신없이 오가다 마지막에 웃은 쪽이 있던 판',
       '매끄럽진 않아도 뜨거웠던 판.',
+      '누가 이겨도 이상하지 않던 판',
+      '실수와 반격이 쉬지 않고 오간 판',
     ],
     won: [
       '넘어져도 먼저 일어났어요.',
@@ -353,6 +416,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '엉망이었어도 이긴 건 이긴 거예요.',
       '실수조차 대담했던 판이에요.',
       '서로 흔들리다 먼저 중심을 잡았어요.',
+      '어지러웠지만 마지막에 웃었어요.',
+      '흔들린 만큼 상대도 흔들렸어요.',
     ],
     lost: [
       '서로 흔들리던 판, 마지막 한 번이 아쉬워요.',
@@ -360,6 +425,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '주고받다 마지막에 놓친 판이에요.',
       '실수가 실수를 부른 판이었어요.',
       '다음엔 덜 흔들리면 돼요.',
+      '어지러운 판에서 마지막 한 번을 놓쳤어요.',
+      '누가 이겨도 이상하지 않던 판이에요.',
     ],
   },
   offBoard: {
@@ -369,6 +436,9 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '형세보다 먼저 결과가 나왔어요.',
       '판 위에선 아직 끝나지 않았던 판',
       '결과만으로는 다 말할 수 없는 판',
+      '판 위의 이야기는 아직 남아 있었어요.',
+      '형세와 결과가 다른 길로 간 판',
+      '끝맺음이 판 밖에서 온 판',
     ],
     won: [
       '판 밖에서 얻은 승리예요.',
@@ -376,6 +446,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '결과가 먼저 찾아온 판이에요.',
       '판 위에선 아직 끝나지 않았던 승리예요.',
       '이런 날도 있어요.',
+      '판 위의 형세보다 결과가 먼저 왔어요.',
+      '결과는 내 편이었던 날이에요.',
     ],
     lost: [
       '판 위에선 아직 끝나지 않았던 판이에요.',
@@ -383,6 +455,8 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '판 밖에서 갈린 승부라 더 아쉬워요.',
       '결과만 보고 지나치기엔 아까운 판이에요.',
       '이런 날도 있어요.',
+      '판 위에선 더 해볼 수 있었던 판이에요.',
+      '형세와 다르게 끝나 버렸어요.',
     ],
   },
   tightDraw: {
@@ -392,6 +466,9 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '주고받은 만큼 나눠 가진 판',
       '서로를 끝까지 놓아주지 않은 판',
       '균형 위에서 끝까지 버틴 판',
+      '어느 쪽도 틈을 내주지 않았어요.',
+      '끝까지 같은 무게로 맞선 판',
+      '한 치도 기울지 않은 판',
     ],
   },
   messyDraw: {
@@ -401,10 +478,22 @@ export const HEADLINES: Record<SummaryShape, { neutral: string[]; won?: string[]
       '이길 수도, 질 수도 있었던 판',
       '주고받다 결국 나눠 가진 판',
       '끝내 누구 편도 들지 않은 판',
+      '엎어질 뻔한 판이 제자리로 돌아왔어요.',
+      '기회가 오갔지만 아무도 잡지 못했어요.',
+      '결국 처음 자리로 돌아온 판',
     ],
   },
   ongoing: {
-    neutral: ['아직 이야기가 끝나지 않았어요.', '다음 수가 궁금해지는 판', '아직 결말을 쓰는 중이에요.', '지금부터가 진짜일지도 몰라요.', '판은 아직 열려 있어요.'],
+    neutral: [
+      '아직 이야기가 끝나지 않았어요.',
+      '다음 수가 궁금해지는 판',
+      '아직 결말을 쓰는 중이에요.',
+      '지금부터가 진짜일지도 몰라요.',
+      '판은 아직 열려 있어요.',
+      '어디로 갈지 아직 모르는 판',
+      '다음 장면을 기다리는 중이에요.',
+      '이야기는 지금도 쓰이고 있어요.',
+    ],
   },
 }
 
@@ -427,6 +516,13 @@ function shaped(input: SummaryInput): Shaped | null {
   const lastMove = moveNumberOf(input.plies[0].fen, n).number
   const winnerSlips = () =>
     range(1, n).filter((i) => (input.review.labels[i] === 'mistake' || input.review.labels[i] === 'blunder') && turnOf(input.plies[i - 1].fen) === facts.winner).length
+  const SOUND: ReadonlySet<MoveLabel | null> = new Set(['brilliant', 'great', 'best', 'excellent'])
+  const winnerSacrificed = () =>
+    range(1, n).some((i) => {
+      if (turnOf(input.plies[i - 1].fen) !== facts.winner) return false
+      const label = input.review.labels[i]
+      return label === 'brilliant' || (SOUND.has(label) && sacrificeAt(input.plies, input.review.positions, i))
+    })
   // 짧은 판: 잡은 우세를 놓치지 않고, 일찍 잡았거나 일찍 끝난 판
   const fromWin = (kind: SummaryKind | undefined): SummaryShape => {
     if (kind === 'dominant' && facts.flawless && (lastMove <= QUICK_MOVES || (facts.ply ?? n) <= T.earlyPly)) return 'quick'
@@ -446,6 +542,10 @@ function shaped(input: SummaryInput): Shaped | null {
       case 'comeback':
       case 'comebackLoss':
         return 'comeback'
+    }
+    // 이긴 쪽이 기물을 내주고 이긴 판(탁월한 수, 또는 리뷰가 좋게 본 희생)
+    if (winnerSacrificed()) return 'sacrifice'
+    switch (facts.kind) {
       case 'slugfest':
         return 'chaos'
       case 'turning':
@@ -499,6 +599,23 @@ function isSlip(input: SummaryInput, facts: SummaryFacts): boolean {
   return label === 'mistake' || label === 'blunder'
 }
 
+/** 수순 전체를 섞은 해시로 문장 묶음의 몇 번째를 쓸지 정한다. 같은 대국이면 같은 번호 */
+export function headlineIndex(plies: Ply[], length: number): number {
+  return mix(hash(`${HEADLINE_SALT}|${plies.map((p) => p.san ?? '').join(' ')}`)) % length
+}
+/** 예시 명경기 여덟 판이 서로 다른 문장을 고르도록 고른 값(테스트가 지킨다) */
+const HEADLINE_SALT = 'c211'
+
+/** FNV 해시는 아래 비트가 고르지 않아 나머지 연산 전에 한 번 더 섞는다(murmur3 fmix32) */
+function mix(h: number): number {
+  h ^= h >>> 16
+  h = Math.imul(h, 0x85ebca6b)
+  h ^= h >>> 13
+  h = Math.imul(h, 0xc2b2ae35)
+  h ^= h >>> 16
+  return h >>> 0
+}
+
 /** 리뷰가 끝난 대국을 감상 한 문장과 사실 캡션으로 요약한다. 같은 대국이면 같은 문장 */
 export function summarizeGame(input: SummaryInput): GameSummaryText | null {
   const s = shaped(input)
@@ -506,6 +623,5 @@ export function summarizeGame(input: SummaryInput): GameSummaryText | null {
   const me = input.mySide ?? null
   const pools = HEADLINES[s.shape]
   const pool = me && s.facts.winner && s.facts.kind !== 'inProgress' ? ((me === s.facts.winner ? pools.won : pools.lost) ?? pools.neutral) : pools.neutral
-  const seed = hash(input.plies.map((p) => p.san ?? '').join(' '))
-  return { headline: pool[seed % pool.length], caption: captionOf(input, s) }
+  return { headline: pool[headlineIndex(input.plies, pool.length)], caption: captionOf(input, s) }
 }
